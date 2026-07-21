@@ -216,12 +216,13 @@ pacman -S --needed \
   greetd greetd-tuigreet \
   \
   niri xorg-xwayland \
-  waybar mako fuzzel \
   \
   ttf-jetbrains-mono-nerd ttf-cascadia-code-nerd noto-fonts-emoji ttf-inter \
   \
   zram-generator
 ```
+
+> **waybar / mako / fuzzel are NOT in this list** — they are installed by Home Manager (nixpkgs) via `home/waybar.nix`, `home/mako.nix`, `home/fuzzel.nix` (ticket #7). Only `niri` + `xorg-xwayland` stay at the pacman level because greetd launches `niri-session` before any HM generation is active. Adding them here too would double-install (HM's `~/.nix-profile/bin` copy would shadow `/usr/bin`).
 
 > **Bluetooth codecs**: the plan spec lists `libldac + libfreeaptx + libldacbt-abx` for LDAC/aptX on the ANC headphones. `libldac` and `libfreeaptx` are in the official repos (above). If `libldacbt-abx` is not found, install it via AUR after §10 (yay) — `yay -S libldacbt-abx` (verify the package exists at install time; LDAC/aptX still works with just `libldac` + `libfreeaptx` on modern pipewire).
 

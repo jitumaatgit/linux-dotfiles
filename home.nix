@@ -10,7 +10,10 @@
   #   home/git.nix       (#4)  — git config + SSH signing                    [done]
   #   home/wezterm.nix   (#5)  — terminal                                 [done]
   #   home/nvim.nix      (#6)  — LazyVim                                  [done]
-  #   home/niri.nix      (#7)  — compositor + waybar + fuzzel + mako
+  #   home/niri.nix      (#7)  — compositor (config.kdl)                    [done]
+  #   home/waybar.nix    (#7)  — bar (niri module, NOT hyprland)            [done]
+  #   home/fuzzel.nix    (#7)  — launcher                                  [done]
+  #   home/mako.nix      (#7)  — notifications                             [done]
   #   home/niri-extras.nix (#8) — wallpaper, screenshots, lock, polkit, portals, audio, bluetooth, network, fonts
   #   home/packages.nix  (#9)  — CLI tools + languages + btop
   #   home/ntfy.nix      (#10) — ntfy systemd user service
@@ -20,5 +23,9 @@
     ./home/git.nix
     ./home/wezterm.nix
     ./home/nvim.nix
+    ./home/niri.nix
+    ./home/waybar.nix
+    ./home/fuzzel.nix
+    ./home/mako.nix
   ];
 }

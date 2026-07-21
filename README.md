@@ -74,6 +74,50 @@ Not ported (deliberately):
 
 Custom modules ported verbatim: `weekly-note.lua` (`:ObsidianWeekly` / `:ObsidianWeeklyPrev` / `:ObsidianWeeklyNext`), `task-auto-complete.lua` (moves `- [x]` tasks to `## Completed` on `BufWritePost *.md`), `trouble-fetch-fix.lua` (trouble.nvim CPU-leak patch), `obsidian-task-filter/init.lua` (`:ObsidianTasksByTag`).
 
+## Niri
+
+Niri is the Wayland compositor. The `niri` binary itself is system-installed (pacman — see `INSTALL.md` §5) because greetd launches `niri-session` at the display-manager level before any Home Manager generation is active. Everything else — the `config.kdl`, waybar, mako, fuzzel — is HM-managed across four modules: `home/niri.nix`, `home/waybar.nix`, `home/fuzzel.nix`, `home/mako.nix`.
+
+HM release-25.11 has no `programs.niri` module, so `home/niri.nix` writes `~/.config/niri/config.kdl` directly via `xdg.configFile."niri/config.kdl".text = ''...''` (flush-left per the wezterm/nvim convention). Waybar (`programs.waybar.enable` + `settings` + `style`), fuzzel (`programs.fuzzel.enable` + `settings`), and mako (`services.mako.enable` + `settings`) use their HM modules. All three are installed by HM (nixpkgs) — `INSTALL.md` §5 installs only `niri xorg-xwayland` at the pacman level; `waybar mako fuzzel` were removed from the pacman list when #7 landed to avoid double-installation.
+
+### XWayland
+
+XWayland is on-demand and automatic since niri 25.08: if `xorg-xwayland` (or `xwayland-satellite`) is in `$PATH`, niri creates the X11 socket, exports `$DISPLAY`, and spawns XWayland the moment an X11 client connects. No `config.kdl` stanza is needed. `xorg-xwayland` is in the pacman list (`INSTALL.md` §5).
+
+### Keybindings
+
+Mod is **Super**. Full list in `home/niri.nix` and in the plan spec §"Keybindings (Niri `config.kdl`)". Summary:
+
+| Binding | Action |
+|---|---|
+| `Super+Return` | Terminal (wezterm) |
+| `Super+Space` | Launcher (fuzzel) |
+| `Super+Q` | Close window |
+| `Super+Shift+E` | Quit niri (with confirmation) |
+| `Super+F` | Fullscreen window |
+| `Super+Esc` | Lock (swaylock) |
+| `Super+1`–`Super+9` | Focus workspace N |
+| `Super+Shift+1`–`Super+Shift+9` | Move column to workspace N |
+| `Super+H` / `Super+L` | Focus column left / right |
+| `Super+K` / `Super+J` | Focus window up / down (in column) |
+| `Super+Shift+H` / `Super+Shift+L` | Move column left / right |
+| `Super+Shift+K` / `Super+Shift+J` | Move window up / down (in column) |
+| `Super+Shift+S` | Screenshot (niri built-in, respects `screenshot-path`) |
+| `Super+O` | Toggle overview |
+| `Super+R` | Cycle preset column widths |
+| `Super+Minus` / `Super+Equal` | Column width −10% / +10% |
+| FN keys | Volume (`wpctl`) + brightness (`brightnessctl`), `allow-when-locked=true` |
+
+### Bar / launcher / notifications
+
+- **waybar** (`home/waybar.nix`): top bar, catppuccin mocha. Modules: `niri/workspaces` (left), `niri/window` (center), `tray` + `pulseaudio` + `network` + `battery` + `clock` (right). Uses waybar's **niri module** (NOT the hyprland module). Spawned by niri's `spawn-at-startup "waybar"` (HM's `programs.waybar.enable` installs + configures but does NOT create a systemd service by default).
+- **fuzzel** (`home/fuzzel.nix`): launcher with `terminal = wezterm`, JetBrainsMono Nerd Font, catppuccin mocha colors. Launched via `Super+Space` from the niri config.
+- **mako** (`home/mako.nix`): notifications, anchored top-right, 5s default timeout, catppuccin mocha. Spawned by niri's `spawn-at-startup "mako"` (HM's `services.mako.enable` installs + configures + reloads on change, but does NOT start it as a systemd service).
+
+### Dropped from HyprV4 (deliberately)
+
+wlogout, swappy, thunar, lxappearance, xfce4-settings, sddm (greetd replaces), waybar-hyprland (waybar niri module replaces). None are installed by pacman or HM.
+
 ## Spec
 
 Authoritative plan (45 decisions + footguns): [`notes/handoff/arch-nix-niri-plan-2026-07-21.md`](https://github.com/jitumaatgit/dotfiles/blob/main/notes/handoff/arch-nix-niri-plan-2026-07-21.md) — lives in the private `notes` repo; see the handoff doc at `notes/handoff/arch-nix-niri-tickets-2026-07-21.md` for the ticket frontier.
