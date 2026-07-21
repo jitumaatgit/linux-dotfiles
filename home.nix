@@ -7,7 +7,7 @@
 
   # Per-program modules:
   #   home/zsh.nix       (#3)  — shell + aliases + env + starship            [done]
-  #   home/git.nix       (#4)  — git config + SSH signing
+  #   home/git.nix       (#4)  — git config + SSH signing                    [done]
   #   home/wezterm.nix   (#5)  — terminal
   #   home/nvim.nix      (#6)  — LazyVim
   #   home/niri.nix      (#7)  — compositor + waybar + fuzzel + mako
@@ -17,5 +17,6 @@
   #   home/opencode.nix  (#11) — opencode config port
   imports = [
     ./home/zsh.nix
+    ./home/git.nix
   ];
 }
