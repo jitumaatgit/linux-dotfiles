@@ -102,7 +102,7 @@ Mod is **Super**. Full list in `home/niri.nix` and in the plan spec §"Keybindin
 | `Super+K` / `Super+J` | Focus window up / down (in column) |
 | `Super+Shift+H` / `Super+Shift+L` | Move column left / right |
 | `Super+Shift+K` / `Super+Shift+J` | Move window up / down (in column) |
-| `Super+Shift+S` | Screenshot (niri built-in, respects `screenshot-path`) |
+| `Super+Shift+S` | Screenshot (`grim -g "$(slurp)" \| wl-copy`, clipboard-only) |
 | `Super+O` | Toggle overview |
 | `Super+R` | Cycle preset column widths |
 | `Super+Minus` / `Super+Equal` | Column width −10% / +10% |
@@ -117,6 +117,43 @@ Mod is **Super**. Full list in `home/niri.nix` and in the plan spec §"Keybindin
 ### Dropped from HyprV4 (deliberately)
 
 wlogout, swappy, thunar, lxappearance, xfce4-settings, sddm (greetd replaces), waybar-hyprland (waybar niri module replaces). None are installed by pacman or HM.
+
+## Niri Extras
+
+The supporting desktop stack (wallpaper, screenshots, lock, idle, polkit, portals, audio, bluetooth, network, fonts) is split across HM and pacman, managed by `home/niri-extras.nix` plus `spawn-at-startup` lines in `home/niri.nix`.
+
+### HM-installed (pure user-space tools, no system config)
+
+`grim`, `slurp`, `wl-clipboard`, `brightnessctl`, `pavucontrol`, `swaybg`, `swayidle` — declared in `home/niri-extras.nix` `home.packages`. Removed from `INSTALL.md` §5 pacman list to avoid double-installation (same pattern as #7's waybar/mako/fuzzel).
+
+### pacman-installed (system-level config needed, no HM equivalent)
+
+- **swaylock** — PAM config in `/etc/pam.d/swaylock` (HM can't manage that on non-NixOS). `home/niri-extras.nix` uses `programs.swaylock` with `package = null` so HM writes `~/.config/swaylock/config` (appearance only — catppuccin mocha colors, font, indicator) while pacman provides the binary + PAM.
+- **polkit-gnome** — auth agent; the polkit daemon is system-level. Spawned by niri's `spawn-at-startup "/usr/lib/polkit-gnome/polkit-gnome-authentication-agent-1"` (full path because `/usr/lib/polkit-gnome` isn't on `$PATH`).
+- **blueman + blueman-applet** — system bluetooth service + tray applet. `blueman-applet` spawned by niri.
+- **nm-applet** — NetworkManager tray applet. NetworkManager is pacstrap-installed (§2); `nm-applet` added to §5; spawned by niri.
+- **xdg-desktop-portal + xdg-desktop-portal-gtk + xdg-desktop-portal-gnome** — dbus-activated, configured by `niri-portals.conf` shipped by the niri package. No HM `xdg.portal` config — niri's shipped config is sufficient.
+- **pipewire + wireplumber + pipewire-pulse + pipewire-alsa** — systemd user services (units at `/usr/lib/systemd/user/`). Enable once after first boot: `systemctl --user enable --now pipewire pipewire-pulse wireplumber` (see `INSTALL.md` §6). `pipewire-jack` deliberately NOT installed (plan spec).
+- **Fonts** (`ttf-jetbrains-mono-nerd`, `ttf-cascadia-code-nerd`, `noto-fonts-emoji`, `ttf-inter`) — pacman base (plan spec "base fonts"). HM modules reference the family names (wezterm/fuzzel/mako/waybar); the font packages themselves stay at pacman.
+- **BT audio codecs** (`libldac`, `libfreeaptx`) — pacman libraries for LDAC/aptX on ANC headphones. `libldacbt-abx` is AUR-only — see `INSTALL.md` §5 note.
+- **Intel media accel** (`intel-media-driver`, `vulkan-intel`, `libva-mesa-driver`, `libva-intel-driver`, `vulkan-mesa-layers`, `mesa`) — pacman libraries for Meteor Lake video encode/decode. No HM config.
+
+### Wallpaper
+
+`spawn-at-startup "swaybg" "-c" "#1e1e2e" "-m" "fill"` in `home/niri.nix` sets a solid catppuccin mocha base color as the default wallpaper. To use an image, edit that line to `spawn-at-startup "swaybg" "-i" "/path/to/wallpaper.jpg" "-m" "fill"` and `home-manager switch`.
+
+### Screenshots
+
+`Super+Shift+S` runs `grim -g "$(slurp)" - | wl-copy` (region selection via slurp → capture via grim → pipe to Wayland clipboard via wl-copy). Clipboard-only, no file save. swappy deliberately NOT installed (plan spec). Alternative: niri's built-in `screenshot` action (saves to file too — would need `screenshot-path` set, see #7 handoff).
+
+### Lock + idle
+
+- **swaylock** (`Super+Esc`): catppuccin mocha appearance via `programs.swaylock` (see above). `swaylock -f` (daemonized, `-f` flag) is what swayidle runs on idle/sleep.
+- **swayidle** (spawned at niri startup): 300s idle → `swaylock -f` (lock); 301s → `niri msg action power-off-monitors` (1s after lock so the lock screen is drawn first, saves power); `before-sleep` → `swaylock -f` (covers lid-close → logind suspend). Adjust the 300/301 timeouts in `home/niri.nix` if you want a different idle delay. The `before-sleep` lid-close coverage relies on logind's default `HandleLidSwitch=suspend` — if you set `HandleLidSwitch=ignore` or `=lock` in `/etc/systemd/logind.conf`, lid-close won't trigger suspend and `before-sleep` won't fire; in that case add a `lock` event hook to swayidle or set `HandleLidSwitch=lock` (logind locks directly).
+
+### Spawn-at-startup vs systemd user services
+
+All #8 components use niri's `spawn-at-startup` (not HM's `systemd.user.services` / `services.swayidle` / `services.blueman-applet` / `services.network-manager-applet`). This matches the #7 pattern for waybar/mako: simpler, works without niri's systemd integration, and avoids the `config.wayland.systemd.target` dependency that HM's swayidle/blueman-applet modules would need. Trade-off: no `systemctl --user status swaybg` (it's a child of niri, not a systemd unit). The niri wiki documents both approaches — see `Example systemd Setup` if you prefer the systemd path.
 
 ## Spec
 

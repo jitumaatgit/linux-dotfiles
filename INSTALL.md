@@ -206,12 +206,13 @@ pacman -S --needed \
   \
   keyd \
   \
-  pipewire wireplumber pipewire-pulse pipewire-alsa pavucontrol \
+  pipewire wireplumber pipewire-pulse pipewire-alsa \
   \
   bluez blueman libldac libfreeaptx \
   \
-  brightnessctl grim slurp swaybg swaylock swayidle \
+  swaylock \
   polkit-gnome xdg-desktop-portal xdg-desktop-portal-gtk xdg-desktop-portal-gnome \
+  network-manager-applet \
   \
   greetd greetd-tuigreet \
   \
@@ -224,9 +225,11 @@ pacman -S --needed \
 
 > **waybar / mako / fuzzel are NOT in this list** — they are installed by Home Manager (nixpkgs) via `home/waybar.nix`, `home/mako.nix`, `home/fuzzel.nix` (ticket #7). Only `niri` + `xorg-xwayland` stay at the pacman level because greetd launches `niri-session` before any HM generation is active. Adding them here too would double-install (HM's `~/.nix-profile/bin` copy would shadow `/usr/bin`).
 
+> **pavucontrol / brightnessctl / grim / slurp / swaybg / swayidle are NOT in this list either** — they are installed by Home Manager via `home/niri-extras.nix` (ticket #8). `pavucontrol` (mixer, NOT pwvucontrol per plan spec), `brightnessctl` (backlight, used by niri FN-key binds), `grim`+`slurp`+`wl-clipboard` (screenshot binding `Super+Shift+S`), `swaybg` (wallpaper), `swayidle` (idle/lock manager) are all pure user-space tools with no system-level config, so HM owns them. `swaylock` stays at pacman (PAM config in `/etc/pam.d/swaylock` — HM `programs.swaylock` uses `package = null` and writes only `~/.config/swaylock/config`). `polkit-gnome` stays at pacman (system polkit daemon). `blueman`+`blueman-applet` stay at pacman (system bluetooth service). `nm-applet` stays at pacman (NetworkManager is pacstrap base). `xdg-desktop-portal*` stay at pacman (dbus-activated, configured by `niri-portals.conf` shipped by niri). `pipewire`+`wireplumber`+`pipewire-pulse`+`pipewire-alsa` stay at pacman (systemd user units at `/usr/lib/systemd/user/` — enable per-user after first boot, see §6).
+
 > **Bluetooth codecs**: the plan spec lists `libldac + libfreeaptx + libldacbt-abx` for LDAC/aptX on the ANC headphones. `libldac` and `libfreeaptx` are in the official repos (above). If `libldacbt-abx` is not found, install it via AUR after §10 (yay) — `yay -S libldacbt-abx` (verify the package exists at install time; LDAC/aptX still works with just `libldac` + `libfreeaptx` on modern pipewire).
 
-> **Dropped vs a generic Arch desktop**: no `ntfs-3g` (no Windows dual boot), no `nvidia` (integrated Intel only), no `networkmanager-openvpn` (use HM/user-space if needed later), no `gdm`/`sddm` (greetd replaces), no `snapper`/`timeshift` (manual snapshots + pacman hook, see §7).
+> **Dropped vs a generic Arch desktop**: no `ntfs-3g` (no Windows dual boot), no `nvidia` (integrated Intel only), no `networkmanager-openvpn` (use HM/user-space if needed later), no `gdm`/`sddm` (greetd replaces), no `snapper`/`timeshift` (manual snapshots + pacman hook, see §7), no `pipewire-jack` (explicitly dropped — plan spec), no `swappy` (explicitly dropped — plan spec).
 
 ### AUR bootstrap — `yay-bin`
 
@@ -270,6 +273,19 @@ ufw default deny incoming
 ufw default allow outgoing
 ufw enable
 ```
+
+### Per-user services (run AFTER first boot, as `bobbytables`)
+
+Audio (pipewire) ships as systemd user units at `/usr/lib/systemd/user/`. They are NOT enabled by the system-level `systemctl enable` above — run these once after first login:
+
+```bash
+# As bobbytables, after first boot:
+systemctl --user enable --now pipewire pipewire-pulse wireplumber
+```
+
+`pipewire-alsa` is a compatibility layer (no separate service — it's a config file that redirects ALSA clients to pipewire). `pipewire-jack` deliberately NOT installed (plan spec). Verify with `pactl info` (should show "Server Name: PulseAudio (on PipeWire)") and `wpctl status` (lists audio devices).
+
+The other #8 components (swaybg, swayidle, polkit-gnome, blueman-applet, nm-applet) are started by niri's `spawn-at-startup` (in `home/niri.nix`) — no `systemctl --user enable` needed for those. See the README `## Niri Extras` section for the full split.
 
 > **Footgun**: do NOT enable `fstrim.timer`. NVMe TRIM is handled by the `discard=async` btrfs mount option (§1). Enabling both is redundant; async discard is the chosen path.
 

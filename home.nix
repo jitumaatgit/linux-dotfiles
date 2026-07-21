@@ -14,7 +14,7 @@
   #   home/waybar.nix    (#7)  — bar (niri module, NOT hyprland)            [done]
   #   home/fuzzel.nix    (#7)  — launcher                                  [done]
   #   home/mako.nix      (#7)  — notifications                             [done]
-  #   home/niri-extras.nix (#8) — wallpaper, screenshots, lock, polkit, portals, audio, bluetooth, network, fonts
+  #   home/niri-extras.nix (#8)  — swaybg/swayidle/swaylock/polkit/portals/audio/bt/network/fonts [done]
   #   home/packages.nix  (#9)  — CLI tools + languages + btop
   #   home/ntfy.nix      (#10) — ntfy systemd user service
   #   home/opencode.nix  (#11) — opencode config port
@@ -27,5 +27,6 @@
     ./home/waybar.nix
     ./home/fuzzel.nix
     ./home/mako.nix
+    ./home/niri-extras.nix
   ];
 }

@@ -49,20 +49,33 @@ layout {
     }
 }
 
-// waybar is spawned here (HM programs.waybar.enable installs + configures
-// but does NOT create a systemd service by default). mako likewise — HM
-// services.mako.enable installs + configures + reloads on change, but does
-// NOT start it; niri spawns it.
+// waybar + mako are spawned here (HM programs.waybar.enable / services.mako.enable
+// install + configure but do NOT create systemd services by default — see #7
+// handoff). Same spawn-at-startup pattern for the #8 supporting stack:
+//   swaybg        — solid catppuccin base color; swap `-c "#1e1e2e"` for
+//                   `-i /path/to/wallpaper.jpg -m fill` to use an image.
+//   swayidle      — 300s idle → `swaylock -f`; 301s → power off monitors
+//                   (1s after lock so the lock screen is drawn first);
+//                   `before-sleep` covers lid-close → logind suspend.
+//   polkit-gnome  — full path because /usr/lib/polkit-gnome isn't on $PATH.
+//   blueman-applet, nm-applet — tray applets (waybar provides the tray).
+// All pacman-installed (PAM/systemd/dbus needs) except swaybg+swayidle which
+// HM installs (home/niri-extras.nix). The simpler spawn-at-startup approach
+// avoids requiring niri's systemd integration — see #7 handoff for the
+// spawn-vs-systemd rationale.
 spawn-at-startup "waybar"
 spawn-at-startup "mako"
+spawn-at-startup "swaybg" "-c" "#1e1e2e" "-m" "fill"
+spawn-at-startup "swayidle" "-w" "timeout" "300" "swaylock -f" "timeout" "301" "niri msg action power-off-monitors" "before-sleep" "swaylock -f"
+spawn-at-startup "/usr/lib/polkit-gnome/polkit-gnome-authentication-agent-1"
+spawn-at-startup "blueman-applet"
+spawn-at-startup "nm-applet"
 
 hotkey-overlay {
     skip-at-startup
 }
 
 prefer-no-csd
-
-screenshot-path "~/Pictures/Screenshots/Screenshot from %Y-%m-%d %H-%M-%S.png"
 
 // Work around WezTerm's initial configure bug (empty default-column-width).
 window-rule {
@@ -123,14 +136,20 @@ binds {
     Mod+Minus { set-column-width "-10%"; }
     Mod+Equal { set-column-width "+10%"; }
 
-    // Screenshot (niri built-in; respects screenshot-path above)
-    Mod+Shift+S { screenshot; }
+    // Screenshot — grim+slurp, clipboard-only (per #8 issue). swappy
+    // deliberately NOT installed (plan spec). Alternative: niri's built-in
+    // `screenshot` action saves to file too (would need `screenshot-path`
+    // set + `~/Pictures/Screenshots/` to exist) — see #7 handoff.
+    // `\"$(slurp)\"` is KDL-escaped `"`; the shell expands `$(slurp)` to the
+    // selected region. grim+slurp+wl-clipboard are HM-installed (niri-extras).
+    Mod+Shift+S { spawn-sh "grim -g \"$(slurp)\" - | wl-copy"; }
 
     // Volume (wireplumber wpctl) + brightness (brightnessctl) — FN keys.
     // The plan says "FN keys (no extra config)" — niri has NO default
     // keybindings, so the XF86 keys must be bound explicitly or the laptop's
-    // volume/brightness FN keys do nothing. wpctl + brightnessctl are in the
-    // pacman list (INSTALL.md §5); swaylock (Super+Esc above) likewise.
+    // volume/brightness FN keys do nothing. wpctl is pacman-installed (pipewire
+    // stack, INSTALL.md §5); brightnessctl is HM-installed (niri-extras.nix);
+    // swaylock is pacman-installed (PAM config, HM programs.swaylock package=null).
     XF86AudioRaiseVolume allow-when-locked=true { spawn-sh "wpctl set-volume @DEFAULT_AUDIO_SINK@ 0.1+ -l 1.0"; }
     XF86AudioLowerVolume allow-when-locked=true { spawn-sh "wpctl set-volume @DEFAULT_AUDIO_SINK@ 0.1-"; }
     XF86AudioMute        allow-when-locked=true { spawn-sh "wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle"; }
