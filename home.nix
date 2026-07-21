@@ -17,7 +17,7 @@
   #   home/niri-extras.nix (#8)  — swaybg/swayidle/swaylock/polkit/portals/audio/bt/network/fonts [done]
   #   home/packages.nix  (#9)  — CLI tools + languages + btop              [done]
   #   home/ntfy.nix      (#10) — ntfy systemd user service                  [done]
-  #   home/opencode.nix  (#11) — opencode config port
+  #   home/opencode.nix  (#11) — opencode config port                        [done]
   imports = [
     ./home/zsh.nix
     ./home/git.nix
@@ -30,5 +30,6 @@
     ./home/niri-extras.nix
     ./home/packages.nix
     ./home/ntfy.nix
+    ./home/opencode.nix
   ];
 }

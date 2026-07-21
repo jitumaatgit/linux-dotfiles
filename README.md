@@ -219,6 +219,53 @@ ntfy pub --title="test" shift-automator-doomax "hi"          # expect a mako toa
 journalctl --user -u ntfy-client --no-pager -n 10
 ```
 
+## opencode
+
+The opencode CLI config is managed by `home/opencode.nix` (ticket #11). The opencode binary itself is NOT installed by Home Manager — it is a Node CLI installed out-of-band (`npm i -g opencode` or the user's bootstrap). HM only writes the config files under `~/.config/opencode/` that opencode reads at startup.
+
+HM release-25.11 has no `programs.opencode` module, so the module writes each config file via `xdg.configFile."opencode/<path>".text = ''...''` (flush-left per the wezterm/nvim/ntfy convention).
+
+### HM-managed
+
+- `opencode/opencode.json` — provider block (NVIDIA NIM, `{env:NVIDIA_API_KEY}` templating), model picks (`nvidia/z-ai/glm-5.2` main, `nvidia/minimaxai/minimax-m3` small + build agent). Ported verbatim; no Windows paths to replace (the file is path-free).
+- `opencode/opencode.jsonc` — schema-ref-only override file. Ported verbatim (trailing newline added for POSIX compliance — the Windows source had none).
+- `opencode/commands/` — 6 slash commands: `commit` (scoped commits + push), `learn` (extract session learnings to AGENTS.md), `rmslop` (strip AI code slop), `plannotator-annotate` / `plannotator-last` / `plannotator-review` (Plannotator UI triggers).
+- `opencode/modes/docs.md` — documentation-writing mode (relaxed tone, 2-sentence chunks, `docs:` commit prefix).
+
+The Windows source had both `command/` (singular) and `commands/` (plural) directories. opencode reads `commands/` (plural) — that is the canonical dir. The 3 files unique to `command/` (`commit.md`, `learn.md`, `rmslop.md`) are merged into `commands/` here. The `plannotator-*` files were identical in both dirs (verified by diff), so no content is lost.
+
+### Not HM-managed (left user-managed)
+
+- `~/.config/opencode/AGENTS.md` — OS-specific, hand-edited (the Windows AGENTS.md has ADB/Termux/Tasker/Windows-path notes that don't apply on Linux). Recreate on the target with Linux-specific content, or symlink to a maintained copy in `~/notes/`.
+- `~/.config/opencode/skills/` — skills are user-installed via `npx skills add -g` to `~/.agents/skills/` (user-level, per the ticket). The config-level `skills/` dir is left empty; HM does not create it. Reinstall skills on the target with `npx skills add -g mattpocock/skills` (or whichever sources).
+- `~/.config/opencode/package.json`, `node_modules/`, `package-lock.json` — opencode regenerates these when plugins or MCP servers are installed. Not HM's concern.
+- `~/.config/opencode/.gitignore` — HM is the source of truth for the managed files; no per-dir git tracking needed.
+
+### Port changes Windows → Linux
+
+The port is **content-identical modulo newline normalization** — the Windows sources used CRLF, the Nix `''...''` strings render as LF (correct for Linux). No path rewrites were needed (opencode.json is path-free; the command/mode files are markdown with no OS-specific paths).
+
+### Environment
+
+`OPENCODE_DISABLE_AUTOUPDATE=true` is set in `home/zsh.nix` (#3, line 72) — prevents opencode from self-updating under the HM-managed config (HM is the source of truth). `PLANNOTATOR_DATA_DIR="$HOME/notes/docs/plannotator"` is also set there. `NVIDIA_API_KEY` is sourced from `~/notes/*.env` (the `for f in ~/notes/*.env(N)` loop in zsh.nix) — secrets stay out of HM.
+
+### Verify
+
+```bash
+# Config files are HM-managed symlinks to the nix store
+ls -la ~/.config/opencode/opencode.json ~/.config/opencode/commands/commit.md ~/.config/opencode/modes/docs.md
+
+# opencode launches and reads the ported config
+opencode --version
+opencode run --command commit          # /commit slash command works (uses commands/commit.md)
+
+# Provider env var is set (sourced from ~/notes/*.env by zsh.nix)
+test -n "$NVIDIA_API_KEY" && echo set || echo unset
+
+# Skills discoverable at ~/.agents/skills/ (user-level, not HM-managed)
+ls ~/.agents/skills/ | head             # empty until `npx skills add -g` is run on the target
+```
+
 ## Spec
 
 Authoritative plan (45 decisions + footguns): [`notes/handoff/arch-nix-niri-plan-2026-07-21.md`](https://github.com/jitumaatgit/dotfiles/blob/main/notes/handoff/arch-nix-niri-plan-2026-07-21.md) — lives in the private `notes` repo; see the handoff doc at `notes/handoff/arch-nix-niri-tickets-2026-07-21.md` for the ticket frontier.
