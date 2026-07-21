@@ -231,6 +231,8 @@ pacman -S --needed \
 
 > **Dropped vs a generic Arch desktop**: no `ntfs-3g` (no Windows dual boot), no `nvidia` (integrated Intel only), no `networkmanager-openvpn` (use HM/user-space if needed later), no `gdm`/`sddm` (greetd replaces), no `snapper`/`timeshift` (manual snapshots + pacman hook, see §7), no `pipewire-jack` (explicitly dropped — plan spec), no `swappy` (explicitly dropped — plan spec).
 
+> **CLI tools / languages / btop are NOT in this list** — they are installed by Home Manager via `home/packages.nix` (ticket #9): `eza bat ripgrep fd jq yq-go yazi lazygit gh python3 uv nodejs rustup terraform android-tools` (via `home.packages`) plus `btop` (via `programs.btop.enable` + ported `settings`). `fzf`, `zoxide`, `starship` are installed by `home/zsh.nix` (#3) via their HM modules. AUR-only items (`zen-browser`, `anki-bin`) are installed via `yay` after §10 — NOT in nix or pacman. Do NOT add any of these to the pacman list — HM's `~/.nix-profile/bin/` copy would shadow `/usr/bin/` (same pattern as #7's waybar/mako/fuzzel and #8's grim/slurp/etc.).
+
 ### AUR bootstrap — `yay-bin`
 
 `yay` is AUR-only (for zen-browser, anki-bin, and any codec packages not in official repos). Install after first boot as `bobbytables`:

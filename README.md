@@ -155,6 +155,39 @@ The supporting desktop stack (wallpaper, screenshots, lock, idle, polkit, portal
 
 All #8 components use niri's `spawn-at-startup` (not HM's `systemd.user.services` / `services.swayidle` / `services.blueman-applet` / `services.network-manager-applet`). This matches the #7 pattern for waybar/mako: simpler, works without niri's systemd integration, and avoids the `config.wayland.systemd.target` dependency that HM's swayidle/blueman-applet modules would need. Trade-off: no `systemctl --user status swaybg` (it's a child of niri, not a systemd unit). The niri wiki documents both approaches — see `Example systemd Setup` if you prefer the systemd path.
 
+## Packages
+
+User-space CLI tools, language runtimes, and btop are managed by `home/packages.nix` (ticket #9). All installed via Home Manager — none of these are in the `INSTALL.md` §5 pacman list.
+
+### CLI tools (HM-installed)
+
+`eza`, `bat`, `ripgrep`, `fd`, `jq`, `yq-go` (Mike Farah's Go yq — matches what Scoop ships on Windows; the binary is still `yq`), `yazi`, `lazygit`, `gh`. `gh` has no ported config — run `gh auth login --web` once after first boot (the auth token lives in `~/.config/gh/hosts.yml`, outside HM's scope).
+
+`fzf`, `zoxide`, and `starship` are installed by `home/zsh.nix` (#3) via their HM modules (`programs.fzf` / `programs.zoxide` / `programs.starship`) with zsh integrations and config — not duplicated in `home/packages.nix`.
+
+### Languages (HM-installed)
+
+`python3` + `uv` (Python package manager), `nodejs`, `rustup`, `terraform`, `android-tools` (adb + fastboot, replaces the Windows Scoop `adb`). **Rust post-switch step**: `rustup` ships no default toolchain — after `home-manager switch`, run `rustup default stable` to install the stable toolchain (`rustc`, `cargo`, etc.). The HM module installs the `rustup` binary only; it does not pin a toolchain (matches the plan spec footgun: on Linux the `rustup` package path situation is simpler than Windows — just `rustup default stable` post-install).
+
+### btop (HM-installed + ported config)
+
+`programs.btop.enable` installs `btop`; `programs.btop.settings` ports the config from the Windows `scoop/persist/btop/btop.conf`. Port changes Windows → Linux:
+
+- `color_theme` changed from the Windows absolute path (`C:\Users\student\scoop\apps\btop\current\themes\tokyo-night.theme`) to the bare theme name `"tokyo-night"` — btop Linux resolves it via `~/.config/btop/themes/` then the package's shipped themes (nixpkgs btop ships the same upstream themes as btop4win, including tokyo-night).
+- **Dropped btop4win-only options**: `enable_ohmr` (Libre Hardware Monitor DLL — Windows-only), `show_gpu` / `selected_gpu` / `gpu_mem_override` (LHM GPU monitoring — no btop Linux equivalent for Intel Arc integrated), `rounded_corners` (btop4win terminal rendering — btop Linux uses character-based corners), `cpu_graph_lower = "gpu"` (btop4win GPU graph).
+- **Omitted empty-value options** (`cpu_sensor`, `custom_cpu_name`, `disks_filter`, `io_graph_speeds`, `net_iface`) so btop's auto-detect defaults apply on Linux.
+- Everything else ported verbatim: `vim_keys = true`, `update_ms = 1500`, `proc_sorting = "cpu direct"`, `graph_symbol = "braille"`, `shown_boxes = "cpu mem net proc"`, `temp_scale = "celsius"`, `clock_format = "%X"`, `show_battery = true`, `log_level = "WARNING"`, etc.
+
+### AUR-only (NOT in nix)
+
+`zen-browser` and `anki-bin` are AUR-only — not in nixpkgs, not in `home/packages.nix`. Install after the §10 yay bootstrap:
+
+```bash
+yay -S zen-browser-bin anki-bin
+```
+
+See `INSTALL.md` §5 "AUR bootstrap" for the one-time `yay-bin` install.
+
 ## Spec
 
 Authoritative plan (45 decisions + footguns): [`notes/handoff/arch-nix-niri-plan-2026-07-21.md`](https://github.com/jitumaatgit/dotfiles/blob/main/notes/handoff/arch-nix-niri-plan-2026-07-21.md) — lives in the private `notes` repo; see the handoff doc at `notes/handoff/arch-nix-niri-tickets-2026-07-21.md` for the ticket frontier.

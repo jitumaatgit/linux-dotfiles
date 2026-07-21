@@ -15,7 +15,7 @@
   #   home/fuzzel.nix    (#7)  — launcher                                  [done]
   #   home/mako.nix      (#7)  — notifications                             [done]
   #   home/niri-extras.nix (#8)  — swaybg/swayidle/swaylock/polkit/portals/audio/bt/network/fonts [done]
-  #   home/packages.nix  (#9)  — CLI tools + languages + btop
+  #   home/packages.nix  (#9)  — CLI tools + languages + btop              [done]
   #   home/ntfy.nix      (#10) — ntfy systemd user service
   #   home/opencode.nix  (#11) — opencode config port
   imports = [
@@ -28,5 +28,6 @@
     ./home/fuzzel.nix
     ./home/mako.nix
     ./home/niri-extras.nix
+    ./home/packages.nix
   ];
 }
