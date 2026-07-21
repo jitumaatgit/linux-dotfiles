@@ -5,8 +5,8 @@
   home.homeDirectory = "/home/bobbytables";
   home.stateVersion = "25.11";
 
-  # Per-program modules, populated by later tickets:
-  #   home/zsh.nix       (#3)  — shell + aliases + env + starship
+  # Per-program modules:
+  #   home/zsh.nix       (#3)  — shell + aliases + env + starship            [done]
   #   home/git.nix       (#4)  — git config + SSH signing
   #   home/wezterm.nix   (#5)  — terminal
   #   home/nvim.nix      (#6)  — LazyVim
@@ -16,5 +16,6 @@
   #   home/ntfy.nix      (#10) — ntfy systemd user service
   #   home/opencode.nix  (#11) — opencode config port
   imports = [
+    ./home/zsh.nix
   ];
 }
