@@ -8,7 +8,7 @@
   # Per-program modules:
   #   home/zsh.nix       (#3)  — shell + aliases + env + starship            [done]
   #   home/git.nix       (#4)  — git config + SSH signing                    [done]
-  #   home/wezterm.nix   (#5)  — terminal
+  #   home/wezterm.nix   (#5)  — terminal                                 [done]
   #   home/nvim.nix      (#6)  — LazyVim
   #   home/niri.nix      (#7)  — compositor + waybar + fuzzel + mako
   #   home/niri-extras.nix (#8) — wallpaper, screenshots, lock, polkit, portals, audio, bluetooth, network, fonts
@@ -18,5 +18,6 @@
   imports = [
     ./home/zsh.nix
     ./home/git.nix
+    ./home/wezterm.nix
   ];
 }
