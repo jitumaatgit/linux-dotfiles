@@ -188,6 +188,37 @@ yay -S zen-browser-bin anki-bin
 
 See `INSTALL.md` §5 "AUR bootstrap" for the one-time `yay-bin` install.
 
+## ntfy
+
+The ntfy subscription client is managed by `home/ntfy.nix` (ticket #10). It replaces the Windows VBS hidden launcher + snoretoast with a persistent systemd user service that subscribes to the `shift-automator-doomax` topic on ntfy.sh and fires `notify-send` (libnotify) toasts on incoming messages — which mako renders as desktop notifications.
+
+HM release-25.11 has no `programs.ntfy` / `services.ntfy-sh` module, so the module installs the packages, writes `~/.config/ntfy/client.yml` via `xdg.configFile`, and defines the `ntfy-client` systemd user service by hand (same fallback pattern as `home/niri.nix` writing `config.kdl`).
+
+### Packages (HM-installed)
+
+`ntfy-sh` (provides the `ntfy` CLI — publish + subscribe in one binary) and `libnotify` (provides `notify-send`, replacing Windows snoretoast). Neither is in the `INSTALL.md` §5 pacman list.
+
+### client.yml
+
+Ported from the Windows `AppData/Roaming/ntfy/client.yml`. Port changes Windows → Linux:
+
+- `command` switched from `snoretoast -t "%NTFY_TITLE%" -m "%NTFY_MESSAGE%"` to `notify-send "$title" "$message"`. `$title` / `$message` are ntfy's short env-var aliases for `$NTFY_TITLE` / `$NTFY_MESSAGE` (see `ntfy subscribe` docs); double-quoted so spaces in the title/body survive the shell.
+- The `exit /b 0` line is **dropped**. It existed only because snoretoast exits non-zero on success, which ntfy logged as "Command failed". `notify-send` exits 0 on success, so the normalization is unnecessary.
+
+To add a topic: edit the `subscribe:` list in `home/ntfy.nix`, `home-manager switch --flake .#bobbytables`, then `systemctl --user restart ntfy-client`.
+
+### systemd user service
+
+`systemd.user.services.ntfy-client` runs `ntfy subscribe --from-config` persistently. `wantedBy = ["default.target"]` auto-starts it at user session login; `Restart = on-failure` retries if the daemon exits (matching the unit shipped by the upstream deb package — see the ntfy-tablet-setup-2026-07-11 handoff). After `home-manager switch`, the service is enabled and started automatically — no manual `systemctl --user enable` needed.
+
+### Verify
+
+```bash
+systemctl --user status ntfy-client --no-pager
+ntfy pub --title="test" shift-automator-doomax "hi"          # expect a mako toast, no "Command failed" in the journal
+journalctl --user -u ntfy-client --no-pager -n 10
+```
+
 ## Spec
 
 Authoritative plan (45 decisions + footguns): [`notes/handoff/arch-nix-niri-plan-2026-07-21.md`](https://github.com/jitumaatgit/dotfiles/blob/main/notes/handoff/arch-nix-niri-plan-2026-07-21.md) — lives in the private `notes` repo; see the handoff doc at `notes/handoff/arch-nix-niri-tickets-2026-07-21.md` for the ticket frontier.
