@@ -263,7 +263,7 @@ The system-level set (kernel, systemd, mesa, libvirt, greetd, niri, fonts, netwo
 ```bash
 pacman -S --needed \
   linux-headers linux-lts-headers \
-  systemd-sysvcompat dosfstools mtools \
+  systemd-sysvcompat dosfstools mtools git \
   \
   mesa vulkan-intel vulkan-mesa-layers intel-media-driver libva-mesa-driver libva-intel-driver \
   \
@@ -308,17 +308,19 @@ gpasswd -a bobbytables libvirt
 
 > **Dropped vs a generic Arch desktop**: no `ntfs-3g` (no Windows dual boot), no `nvidia` (integrated Intel only), no `networkmanager-openvpn` (use HM/user-space if needed later), no `gdm`/`sddm` (greetd replaces), no `snapper`/`timeshift` (manual snapshots + pacman hook, see §7), no `pipewire-jack` (explicitly dropped — plan spec), no `swappy` (explicitly dropped — plan spec).
 
-> **CLI tools / languages / btop are NOT in this list** — they are installed by Home Manager via `home/packages.nix` (ticket #9): `eza bat ripgrep fd jq yq-go yazi lazygit gh python3 uv nodejs rustup terraform android-tools` (via `home.packages`) plus `btop` (via `programs.btop.enable` + ported `settings`). `fzf`, `zoxide`, `starship` are installed by `home/zsh.nix` (#3) via their HM modules. AUR-only items (`zen-browser`, `anki-bin`) are installed via `yay` after §10 — NOT in nix or pacman. Do NOT add any of these to the pacman list — HM's `~/.nix-profile/bin/` copy would shadow `/usr/bin/` (same pattern as #7's waybar/mako/fuzzel and #8's grim/slurp/etc.).
+> **CLI tools / languages / btop are NOT in this list** — they are installed by Home Manager via `home/packages.nix` (ticket #9): `eza bat ripgrep fd jq yq-go yazi lazygit gh python3 uv nodejs rustup terraform android-tools` (via `home.packages`) plus `btop` (via `programs.btop.enable` + ported `settings`). `fzf`, `zoxide`, `starship` are installed by `home/zsh.nix` (#3) via their HM modules. AUR-only items (`zen-browser-bin`, `anki-bin`) are installed via `yay` (see the §5 AUR bootstrap below, post-first-boot) — NOT in nix or pacman. Do NOT add any of these to the pacman list — HM's `~/.nix-profile/bin/` copy would shadow `/usr/bin/` (same pattern as #7's waybar/mako/fuzzel and #8's grim/slurp/etc.).
 
 ### AUR bootstrap — `yay-bin`
 
-`yay` is AUR-only (for zen-browser, anki-bin, and any codec packages not in official repos). Install after first boot as `bobbytables`:
+`yay` is AUR-only (for zen-browser-bin, anki-bin, and any codec packages not in official repos). Install after first boot as `bobbytables`:
 
 ```bash
-sudo pacman -S --needed git base-devel
+sudo pacman -S --needed base-devel   # git is already installed (§5 base list)
 git clone https://aur.archlinux.org/yay-bin.git /tmp/yay-bin
 cd /tmp/yay-bin && makepkg -si
 ```
+
+> **AUR footgun — use the `-bin` variant**: `yay -S zen-browser` (no `-bin`) builds Firefox from source — hours of Rust/LTO compilation (measured on archbook 2026-07-22). The browser package is `zen-browser-bin`. `anki-bin` is optional (skipped on archbook 2026-07-22; install later if wanted).
 
 ---
 
@@ -475,7 +477,8 @@ greetd service enabled in §6.
 exit              # leave chroot
 
 # Create the EFI NVRAM boot entry — bootctl in chroot silently skipped this
-# (systemd#36174). Run from the ISO host, NOT chrooted, while /mnt is still mounted:
+# (systemd#36174). Run from the ISO host, NOT chrooted, while /mnt is still mounted.
+# Newer ISOs: `arch-chroot -S /mnt` makes bootctl create the entry itself — see §4 footgun.
 efibootmgr --create --disk /dev/nvme0n1 --part 1 --label "Linux Boot Manager" \
   --loader '\EFI\systemd\systemd-bootx64.efi' --unicode
 efibootmgr -v     # verify "Linux Boot Manager" exists and is in BootOrder
@@ -534,7 +537,13 @@ This applies the skeleton (ticket #1). Subsequent tickets (#3 zsh, #4 git, #5 we
 
 ```bash
 ssh-keygen -t ed25519 -C "jitumaat@protonmail.com" -f ~/.ssh/id_ed25519
-gh auth login --web   # add the public key to GitHub
+
+# gh auth login does NOT upload any SSH key — it only auths the CLI.
+gh auth login --web --git-protocol https
+# Grant key-upload scopes (runs the device flow a second time):
+gh auth refresh -h github.com -s admin:ssh_signing_key -s admin:public_key
+# Upload the public key as a SIGNING key (required for the "Verified" badge):
+gh ssh-key add ~/.ssh/id_ed25519.pub --type signing --title archbook
 ```
 
 Git signing is SSH (not GPG): ticket #4's `home/git.nix` sets `gpg.format = ssh`, `user.signingkey = ~/.ssh/id_ed25519`, `commit.gpgsign = true`.
