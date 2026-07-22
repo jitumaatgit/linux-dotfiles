@@ -25,7 +25,7 @@ The complete flow from a blank NVMe to a working desktop:
    ```
    Exits 0 on success (see §Verify below).
 4. **One-time post-switch steps** — these are secrets, SSH keys, external binaries, and private repos that are fundamentally outside any declarative config manager (not user-space config). HM reproduces all user-space config in step 3; these are the irreducible manual leftovers:
-   - SSH key + GitHub auth: `ssh-keygen -t ed25519 -C "jitumaat@protonmail.com" -f ~/.ssh/id_ed25519`, then `gh auth login --web` (uploads the key for git auth + auths the `gh` CLI; token lives in `~/.config/gh/hosts.yml`, outside HM scope) + `gh ssh-key add ~/.ssh/id_ed25519.pub --type signing` (separate upload for the "Verified" badge — see §Git).
+   - SSH key + GitHub auth: `ssh-keygen -t ed25519 -C "jitumaat@protonmail.com" -f ~/.ssh/id_ed25519`, then `gh auth login --web --git-protocol https` (auths the `gh` CLI only — uploads NO key; token lives in `~/.config/gh/hosts.yml`, outside HM scope), then `gh auth refresh -h github.com -s admin:ssh_signing_key -s admin:public_key` (second device flow; grants key-upload scopes), then `gh ssh-key add ~/.ssh/id_ed25519.pub --type signing --title archbook` (separate upload for the "Verified" badge — see §Git).
    - `rustup default stable` — `home/packages.nix` ships `rustup` with no toolchain pinned; this installs `rustc`/`cargo`.
    - `systemctl --user enable --now pipewire pipewire-pulse wireplumber` — pipewire user units are pacman-installed but not enabled per-user (see `INSTALL.md` §6).
    - Clone `~/notes` (private secrets repo) — the zsh `for f in ~/notes/*.env(N)` loop in `home/zsh.nix` sources API keys (`NVIDIA_API_KEY`, etc.) on shell start.
@@ -46,7 +46,7 @@ home-manager switch --flake .#bobbytables --verbose; echo "exit=$?"
 niri msg version
 pgrep -x niri >/dev/null && echo "niri up" || echo "niri down"
 
-# 3. WezTerm launches with Catppuccin Mocha + Cascadia Code NF (config parses → exits 0).
+# 3. WezTerm launches with Catppuccin Mocha + CaskaydiaCove NF (config parses → exits 0).
 wezterm show-keys --key-table | head    # leader is Ctrl+Space
 
 # 4. Neovim launches LazyVim (lazy.nvim bootstraps plugins on first run).
@@ -93,7 +93,7 @@ Footguns from the plan spec — either resolved in code or documented here so th
 - **Home Manager is standalone, not a NixOS module** — see above. The flake pulls HM as an input for `homeManagerConfiguration`; there is no `nixosConfigurations` output.
 - **zsh, not bash** — login shell is zsh (set at `useradd -s` time in `INSTALL.md` §3). Ported from `tablet-dotfiles/.zshrc`, NOT from Windows `.bashrc`. Key changes from the tablet version: `batcat`→`bat`, `foot nvim`→`wezterm start -- nvim`, drop `find='fd'` alias (Arch `fd` is `fd`, not `fdfind`).
 - **`occ()` ported from Windows, not tablet** — tablet's `occ()` has bare-repo git-dir switching for `$HOME/.dotfiles`; this repo is a regular clone, so the simpler Windows `occ()` is used (`opencode run "$@"` / `opencode run --command commit`).
-- **SSH signing, not GPG** — `gpg.format = ssh`, `user.signingkey = ~/.ssh/id_ed25519`, `commit.gpgsign = true`. No GPG keypair, no gpg-agent. `gh ssh-key add --type signing` is a SEPARATE upload from `gh auth login` (required for the "Verified" badge on GitHub).
+- **SSH signing, not GPG** — `gpg.format = ssh`, `user.signingkey = ~/.ssh/id_ed25519`, `commit.gpgsign = true`. No GPG keypair, no gpg-agent. `gh auth login` uploads NO key by itself; the signing-key upload needs the `admin:ssh_signing_key` scope (`gh auth refresh -h github.com -s admin:ssh_signing_key -s admin:public_key`) before `gh ssh-key add ~/.ssh/id_ed25519.pub --type signing --title archbook` (required for the "Verified" badge on GitHub).
 - **No nvim-data backup** — the Windows `nvim-data-remote` junction is deliberately not ported. This machine is not ephemeral; lazy.nvim re-resolves plugins on first run (`nvim --headless "+Lazy! sync" +qa`).
 - **No mouse-grid tool** — `keynavish` and `warpd` both deliberately dropped. Use the trackpad.
 - **Don't remap RWin→LCtrl** — that was a Windows AHK thing. On Linux, Super is Niri's Mod key; keep RWin as Super. keyd only remaps Caps (`overload(control, esc)` — tap=Esc, hold=Ctrl).
@@ -118,11 +118,16 @@ Git config is managed by `home/git.nix`: identity `Jitu <jitumaat@protonmail.com
 
 ```bash
 ssh-keygen -t ed25519 -C "jitumaat@protonmail.com" -f ~/.ssh/id_ed25519
-gh auth login --web                       # uploads the public key as an authentication key
-gh ssh-key add ~/.ssh/id_ed25519.pub --type signing   # separate upload as a signing key (required for "Verified" badge)
+
+# gh auth login does NOT upload any SSH key — it only auths the CLI.
+gh auth login --web --git-protocol https
+# Grant key-upload scopes (runs the device flow a second time):
+gh auth refresh -h github.com -s admin:ssh_signing_key -s admin:public_key
+# Upload the public key as a SIGNING key (required for the "Verified" badge):
+gh ssh-key add ~/.ssh/id_ed25519.pub --type signing --title archbook
 ```
 
-`gh auth login` adds the key for git push/pull auth; the `--type signing` upload is a separate step that GitHub needs to verify commit signatures. After `home-manager switch`, every `git commit` is SSH-signed by default.
+git push/pull auth is HTTPS via gh's credential helper (`--git-protocol https`); the signing-key upload is the separate step that GitHub needs to verify commit signatures — and it requires the `admin:ssh_signing_key` scope from `gh auth refresh` before `gh ssh-key add --type signing` will succeed. After `home-manager switch`, every `git commit` is SSH-signed by default.
 
 ### Verify
 
@@ -135,14 +140,14 @@ Push to GitHub and the commit shows a **Verified** badge. If it shows "Unverifie
 
 ## WezTerm
 
-Terminal is WezTerm, managed by `home/wezterm.nix`. The config is ported verbatim from the Windows `dotfiles/.config/wezterm/` (`wezterm.lua` + `utils.lua`, two files) via `xdg.configFile` — the two-file structure is preserved so `require("utils")` keeps working. `programs.wezterm.enable` installs the package; `extraConfig` is deliberately left unset (it would wrap the script inside a `return { ... }` table body and break the full `config_builder` + `wezterm.on` event-handler style).
+Terminal is WezTerm, managed by `home/wezterm.nix`. The config is ported verbatim from the Windows `dotfiles/.config/wezterm/` (`wezterm.lua` + `utils.lua`, two files) via `xdg.configFile` — the two-file structure is preserved so `require("utils")` keeps working. The wezterm **binary** comes from pacman (`INSTALL.md` §5): nixpkgs wezterm cannot find Arch's GL drivers (`libEGL.so` in `/usr/lib`) and dies with `Failed to create window: with_egl_lib failed`; forcing `LD_LIBRARY_PATH=/usr/lib` segfaults in `libGLdispatch` (nix glibc vs Arch libglvnd mismatch). `home/wezterm.nix` therefore sets `programs.wezterm.enable = false` and HM owns only the config; `extraConfig` is deliberately left unset (it would wrap the script inside a `return { ... }` table body and break the full `config_builder` + `wezterm.on` event-handler style).
 
 Port changes Windows → Linux:
 - `default_prog` is `{"zsh", "-l"}` (was the Scoop Git Bash path) — zsh is the user's login shell.
 - The `wezterm.home_dir:gsub("\\", "/")` line is dropped (no backslashes on Linux; it only fed the Scoop path).
-- Everything else is byte-for-byte: Catppuccin Mocha, leader `Ctrl+Space`, vim-style pane nav (`hjkl`), `Cascadia Code NF` / `JetBrains Mono` font, hyperlink rules, the move-pane `InputSelector`, resize/move key tables.
+- Everything else is byte-for-byte: Catppuccin Mocha, leader `Ctrl+Space`, vim-style pane nav (`hjkl`), `CaskaydiaCove NF` / `JetBrains Mono` font, hyperlink rules, the move-pane `InputSelector`, resize/move key tables.
 
-The `Cascadia Code NF` (Nerd Font) family is required for `eza --icons` glyphs to render. The font package itself is installed by the niri-extras module (#8), not here — WezTerm just references the family name.
+The `CaskaydiaCove NF` (Nerd Font) family is required for `eza --icons` glyphs to render. The font package (`ttf-cascadia-code-nerd`) is pacman-installed (`INSTALL.md` §5), not HM — WezTerm just references the family name.
 
 ## Neovim
 
@@ -169,7 +174,7 @@ Custom modules ported verbatim: `weekly-note.lua` (`:ObsidianWeekly` / `:Obsidia
 
 Niri is the Wayland compositor. The `niri` binary itself is system-installed (pacman — see `INSTALL.md` §5) because greetd launches `niri-session` at the display-manager level before any Home Manager generation is active. Everything else — the `config.kdl`, waybar, mako, fuzzel — is HM-managed across four modules: `home/niri.nix`, `home/waybar.nix`, `home/fuzzel.nix`, `home/mako.nix`.
 
-HM release-25.11 has no `programs.niri` module, so `home/niri.nix` writes `~/.config/niri/config.kdl` directly via `xdg.configFile."niri/config.kdl".text = ''...''` (flush-left per the wezterm/nvim convention). Waybar (`programs.waybar.enable` + `settings` + `style`), fuzzel (`programs.fuzzel.enable` + `settings`), and mako (`services.mako.enable` + `settings`) use their HM modules. All three are installed by HM (nixpkgs) — `INSTALL.md` §5 installs only `niri xorg-xwayland` at the pacman level; `waybar mako fuzzel` were removed from the pacman list when #7 landed to avoid double-installation.
+HM release-25.11 has no `programs.niri` module, so `home/niri.nix` writes `~/.config/niri/config.kdl` directly via `xdg.configFile."niri/config.kdl".text = ''...''` (flush-left per the wezterm/nvim convention). Waybar (`programs.waybar.enable` + `settings` + `style`), fuzzel (`programs.fuzzel.enable` + `settings`), and mako (`services.mako.enable` + `settings`) use their HM modules. All three are installed by HM (nixpkgs) — of the niri desktop stack, `INSTALL.md` §5 keeps only `niri`, `xorg-xwayland`, and `wezterm` (system GL, see §WezTerm) at the pacman level; `waybar mako fuzzel` were removed from the pacman list when #7 landed to avoid double-installation.
 
 ### XWayland
 
@@ -271,10 +276,10 @@ User-space CLI tools, language runtimes, and btop are managed by `home/packages.
 
 ### AUR-only (NOT in nix)
 
-`zen-browser` and `anki-bin` are AUR-only — not in nixpkgs, not in `home/packages.nix`. Install after the §10 yay bootstrap:
+`zen-browser-bin` and `anki-bin` (optional — skipped on archbook) are AUR-only — not in nixpkgs, not in `home/packages.nix`. Install after the yay bootstrap (`INSTALL.md` §5 AUR bootstrap, post-first-boot):
 
 ```bash
-yay -S zen-browser-bin anki-bin
+yay -S zen-browser-bin                    # anki-bin optional
 ```
 
 See `INSTALL.md` §5 "AUR bootstrap" for the one-time `yay-bin` install.
