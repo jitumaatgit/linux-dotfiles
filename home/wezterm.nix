@@ -1,7 +1,15 @@
-{ ... }:
+{ pkgs, ... }:
 
 {
-  programs.wezterm.enable = true;
+  # The wezterm BINARY comes from pacman (`sudo pacman -S wezterm`), NOT from
+  # nixpkgs. On Arch (non-NixOS), nixpkgs wezterm cannot find system GL
+  # drivers (libEGL lives in /usr/lib from pacman mesa) → "Failed to create
+  # window: with_egl_lib failed"; forcing LD_LIBRARY_PATH=/usr/lib segfaults
+  # in libGLdispatch (nix glibc vs Arch libglvnd mismatch). Pacman wezterm
+  # links system mesa + system fontconfig directly (fixes fonts too).
+  # HM owns only the CONFIG below (wezterm.lua + utils.lua). The niri bind
+  # spawns "wezterm" which resolves to /usr/bin/wezterm via PATH.
+  programs.wezterm.enable = false;
 
   xdg.configFile."wezterm/wezterm.lua".text = ''
 local wezterm = require("wezterm")
@@ -12,7 +20,7 @@ local config = wezterm.config_builder()
 config.default_prog = { "zsh", "-l" }
 -- appearance settings
 config.font = wezterm.font_with_fallback({
-	"Cascadia Code NF",
+	"CaskaydiaCove NF",
 	"JetBrains Mono",
 })
 config.animation_fps = 1

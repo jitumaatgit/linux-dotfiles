@@ -63,12 +63,25 @@ umount /mnt
 
 `compress=zstd` (default level 3) and `discard=async` (NVMe async TRIM — NOT `fstrim.timer`). `space_cache=v2` is the modern btrfs default.
 
+The ESP mounts at **`/boot`** (not `/boot/efi`): systemd-boot can only load kernels from the ESP (it reads FAT, not btrfs), so the kernel/initramfs files that pacman writes to `/boot` must physically land on the ESP. Mounting the ESP anywhere else makes the system unbootable with systemd-boot (that layout is for GRUB, which reads btrfs fine).
+
 ```bash
 mount -o rw,relatime,compress=zstd,space_cache=v2,subvol=/@,discard=async /dev/nvme0n1p2 /mnt
-mkdir -p /mnt/{home,.snapshots,boot/efi}
+mkdir -p /mnt/{home,.snapshots,boot}
 mount -o rw,relatime,compress=zstd,space_cache=v2,subvol=/@home,discard=async /dev/nvme0n1p2 /mnt/home
 mount -o rw,relatime,compress=zstd,space_cache=v2,subvol=/@snapshots,discard=async /dev/nvme0n1p2 /mnt/.snapshots
-mount /dev/nvme0n1p1 /mnt/boot/efi
+mount /dev/nvme0n1p1 /mnt/boot
+```
+
+---
+
+## 2. pacstrap + chroot
+
+Minimal base only — the rest of the user-facing packages go in §5 (post-boot) or into Home Manager.
+
+```bash
+pacstrap -K /mnt base base-devel linux linux-lts linux-firmware intel-ucode \
+  btrfs-progs vim networkmanager sudo zsh
 ```
 
 ### fstab
@@ -84,24 +97,15 @@ The resulting `/etc/fstab` must use these btrfs options (verify after genfstab a
 UUID=<root-uuid>  /            btrfs   rw,relatime,compress=zstd,space_cache=v2,subvol=/@,discard=async  0 0
 # /home (btrfs, subvol=@home)
 UUID=<root-uuid>  /home        btrfs   rw,relatime,compress=zstd,space_cache=v2,subvol=/@home,discard=async  0 0
-# /.snapshots (btrfs, subvol=@snapshots)
+# /.snapshots (btrfs, subvol=/@snapshots)
 UUID=<root-uuid>  /.snapshots  btrfs   rw,relatime,compress=zstd,space_cache=v2,subvol=/@snapshots,discard=async  0 0
-# /boot/efi (FAT32)
-UUID=<efi-uuid>   /boot/efi    vfat    rw,relatime,fmask=0077,dmask=0077,codepage=437,iocharset=ascii,shortname=mixed,utf8,errors=remount-ro  0 2
+# /boot (FAT32 ESP)
+UUID=<efi-uuid>   /boot        vfat    rw,relatime,fmask=0077,dmask=0077,codepage=437,iocharset=ascii,shortname=mixed,utf8,errors=remount-ro  0 2
 ```
 
 > **Footgun**: `discard=async` is the NVMe TRIM mechanism. Do NOT enable `fstrim.timer` — async discard on mount is the chosen path. See plan spec footgun "`discard=async` not `fstrim.timer`".
 
----
-
-## 2. pacstrap + chroot
-
-Minimal base only — the rest of the user-facing packages go in §5 (post-boot) or into Home Manager.
-
 ```bash
-pacstrap -K /mnt base base-devel linux linux-lts linux-firmware intel-ucode \
-  btrfs-progs vim networkmanager sudo zsh
-
 arch-chroot /mnt
 ```
 
@@ -129,9 +133,11 @@ passwd
 ### Create user `bobbytables` with zsh login shell
 
 ```bash
-useradd -m -G wheel,libvirt -s /usr/bin/zsh bobbytables
+useradd -m -G wheel -s /usr/bin/zsh bobbytables
 passwd bobbytables
 ```
+
+> **`libvirt` group is added later** — the `libvirt` group is created by the `libvirt` package (installed in §5), so it does not exist at this point. Add the user to it after §5: `gpasswd -a bobbytables libvirt`.
 
 > **Login shell vs HM**: the **login shell** is set here at user creation (`-s /usr/bin/zsh`) — Home Manager does NOT manage the login shell (that requires `chsh`/`usermod`, which is system-level). HM manages the zsh **config** (`.zshrc`, plugins, env, starship) via the `home/zsh.nix` module (ticket #3).
 
@@ -149,11 +155,54 @@ Decision: interactive password (agent + VMs = don't auto-root). See plan spec.
 
 ## 4. systemd-boot — entries for `linux` + `linux-lts`
 
+systemd-boot is the UEFI boot manager. Installing it writes the bootloader binary to the EFI partition; the `.conf` files tell it which kernels to offer at boot.
+
+### Install the bootloader
+
 ```bash
 bootctl install
 ```
 
+Because the ESP is mounted at `/boot`, `bootctl install` will print:
+
+```
+Boot loader installed at /boot/EFI/BOOT/BOOTX64.EFI
+Boot loader entries: ESP: /boot ($BOOT), config: /boot/loader/loader.conf, token: arch
+```
+
+This means all loader config files go under **`/boot/loader/`** — physically the root of the ESP. Kernels (`vmlinuz-linux`, `initramfs-*.img`, `intel-ucode.img`) also land in `/boot` on the ESP, which is exactly where systemd-boot can read them.
+
+> **Footgun — no EFI boot entry is created in the chroot**: `bootctl install` inside `arch-chroot` copies the bootloader files but silently skips creating the EFI NVRAM boot entry (arch-chroot uses a PID namespace, which bootctl treats as a container — [systemd#36174](https://github.com/systemd/systemd/issues/36174), still broken with `--variables=yes` per [systemd#39002](https://github.com/systemd/systemd/issues/39002)). Without the entry, many firmwares (Dell included) won't boot the disk. **After exiting the chroot in §9, create it from the ISO host (NOT chrooted):**
+>
+> ```bash
+> efibootmgr --create --disk /dev/nvme0n1 --part 1 --label "Linux Boot Manager" \
+>   --loader '\EFI\systemd\systemd-bootx64.efi' --unicode
+> ```
+>
+> Verify with `efibootmgr -v` that "Linux Boot Manager" exists and is in `BootOrder`. (Newer ISOs also offer `arch-chroot -S /mnt` which runs bootctl in "system" mode so the entry IS created — efibootmgr works on every ISO.)
+
+### Get the root UUID
+
+You need the UUID of the root btrfs partition for the boot entries below. Run:
+
+```bash
+blkid /dev/nvme0n1p2
+```
+
+Output looks like:
+```
+/dev/nvme0n1p2: UUID="abcd1234-5678-..." ...
+```
+
+Copy the string inside the quotes after `UUID=` (without the quotes). You'll paste it into both `arch.conf` and `arch-lts.conf` below wherever `<root-uuid>` appears.
+
 ### `/boot/loader/loader.conf`
+
+The main bootloader config — which entry to boot by default, how long to wait, etc. Write these 4 lines to the file:
+
+```bash
+vim /boot/loader/loader.conf
+```
 
 ```
 default arch
@@ -162,7 +211,18 @@ console-mode max
 editor no
 ```
 
+- `default arch` → boot `arch.conf` by default
+- `timeout 4` → wait 4 seconds for the boot menu
+- `console-mode max` → use the highest-resolution text mode
+- `editor no` → disable the kernel command-line editor (security)
+
 ### `/boot/loader/entries/arch.conf`
+
+The boot entry for the mainline `linux` kernel (Meteor Lake wants recent kernels). Write to the file:
+
+```bash
+vim /boot/loader/entries/arch.conf
+```
 
 ```
 title   Arch Linux
@@ -172,7 +232,15 @@ initrd  /initramfs-linux.img
 options root=UUID=<root-uuid> rootflags=subvol=/@ rw
 ```
 
+Replace `<root-uuid>` with the UUID you copied above. `intel-ucode.img` is listed first so microcode updates load before the initramfs.
+
 ### `/boot/loader/entries/arch-lts.conf`
+
+The fallback entry for `linux-lts` (recovery if a mainline kernel breaks). Write to the file:
+
+```bash
+vim /boot/loader/entries/arch-lts.conf
+```
 
 ```
 title   Arch Linux LTS
@@ -182,7 +250,7 @@ initrd  /initramfs-linux-lts.img
 options root=UUID=<root-uuid> rootflags=subvol=/@ rw
 ```
 
-Replace `<root-uuid>` with the UUID of `/dev/nvme0n1p2` (`blkid /dev/nvme0n1p2`). `intel-ucode.img` is loaded first for microcode updates.
+Same `<root-uuid>` as `arch.conf`. Only the `linux` and second `initrd` lines differ (point to the `-lts` kernel/initramfs).
 
 Kernel: `linux` mainline (Meteor Lake wants recent kernels) + `linux-lts` fallback (recovery). See plan spec "Kernel" decision.
 
@@ -217,13 +285,22 @@ pacman -S --needed \
   greetd greetd-tuigreet \
   \
   niri xorg-xwayland \
+  wezterm \
   \
   ttf-jetbrains-mono-nerd ttf-cascadia-code-nerd noto-fonts-emoji ttf-inter \
   \
   zram-generator
 ```
 
+Now that `libvirt` is installed, add `bobbytables` to the `libvirt` group (deferred from §3):
+
+```bash
+gpasswd -a bobbytables libvirt
+```
+
 > **waybar / mako / fuzzel are NOT in this list** — they are installed by Home Manager (nixpkgs) via `home/waybar.nix`, `home/mako.nix`, `home/fuzzel.nix` (ticket #7). Only `niri` + `xorg-xwayland` stay at the pacman level because greetd launches `niri-session` before any HM generation is active. Adding them here too would double-install (HM's `~/.nix-profile/bin` copy would shadow `/usr/bin`).
+>
+> **wezterm IS in this list** (exception to the "HM owns user-space" pattern): nixpkgs wezterm cannot find Arch's GL drivers (`libEGL.so` in `/usr/lib`) and dies with `Failed to create window: with_egl_lib failed`; forcing `LD_LIBRARY_PATH=/usr/lib` segfaults in `libGLdispatch` (nix glibc vs Arch libglvnd mismatch). GL-heavy binaries belong at the pacman level on Arch — HM owns only `~/.config/wezterm/` (`home/wezterm.nix` sets `programs.wezterm.enable = false`).
 
 > **pavucontrol / brightnessctl / grim / slurp / swaybg / swayidle are NOT in this list either** — they are installed by Home Manager via `home/niri-extras.nix` (ticket #8). `pavucontrol` (mixer, NOT pwvucontrol per plan spec), `brightnessctl` (backlight, used by niri FN-key binds), `grim`+`slurp`+`wl-clipboard` (screenshot binding `Super+Shift+S`), `swaybg` (wallpaper), `swayidle` (idle/lock manager) are all pure user-space tools with no system-level config, so HM owns them. `swaylock` stays at pacman (PAM config in `/etc/pam.d/swaylock` — HM `programs.swaylock` uses `package = null` and writes only `~/.config/swaylock/config`). `polkit-gnome` stays at pacman (system polkit daemon). `blueman`+`blueman-applet` stay at pacman (system bluetooth service). `nm-applet` stays at pacman (NetworkManager is pacstrap base). `xdg-desktop-portal*` stay at pacman (dbus-activated, configured by `niri-portals.conf` shipped by niri). `pipewire`+`wireplumber`+`pipewire-pulse`+`pipewire-alsa` stay at pacman (systemd user units at `/usr/lib/systemd/user/` — enable per-user after first boot, see §6).
 
@@ -392,14 +469,35 @@ greetd service enabled in §6.
 
 ---
 
-## 9. Nix package manager + Home Manager (standalone)
+## 9. Exit chroot + first boot
+
+```bash
+exit              # leave chroot
+
+# Create the EFI NVRAM boot entry — bootctl in chroot silently skipped this
+# (systemd#36174). Run from the ISO host, NOT chrooted, while /mnt is still mounted:
+efibootmgr --create --disk /dev/nvme0n1 --part 1 --label "Linux Boot Manager" \
+  --loader '\EFI\systemd\systemd-bootx64.efi' --unicode
+efibootmgr -v     # verify "Linux Boot Manager" exists and is in BootOrder
+
+umount -R /mnt    # verify clean unmount
+reboot            # remove ISO, boot into Arch
+```
+
+On first boot, log in as `bobbytables` at the greetd tuigreet prompt → launches `niri-session`.
+
+---
+
+## 10. Nix package manager + Home Manager (standalone)
+
+> **Run after first boot**, as `bobbytables`. Installing Nix in the chroot fails with `getting sandbox mount namespace: No such file or directory` because the chroot lacks the mount namespaces Nix's sandbox needs. On a booted system the daemon starts via systemd and the sandbox works with no workarounds.
 
 ### Nix — Determinate Systems installer
 
 Flakes enabled by default, idempotent, cleaner uninstall than the official installer:
 
 ```bash
-sh <(curl -L https://install.determinate.systems/nix) --daemon
+sh <(curl -L https://install.determinate.systems/nix)
 ```
 
 Re-open the shell or `source /etc/profile.d/nix.sh` to get `nix` on PATH.
@@ -420,21 +518,9 @@ This puts `home-manager` on PATH permanently. The flake in this repo also pulls 
 
 ---
 
-## 10. Exit chroot + first boot
-
-```bash
-exit              # leave chroot
-umount -R /mnt    # verify clean unmount
-reboot            # remove ISO, boot into Arch
-```
-
-On first boot, log in as `bobbytables` at the greetd tuigreet prompt → launches `niri-session`.
-
----
-
 ## 11. What to clone next
 
-After first boot, with Nix + HM installed (§9):
+After first boot, with Nix + HM installed (§10):
 
 ```bash
 git clone https://github.com/jitumaatgit/linux-dotfiles.git ~/linux-dotfiles

@@ -45,6 +45,6 @@ subscribe:
       Restart = "on-failure";
       RestartSec = "5s";
     };
-    wantedBy = [ "default.target" ];
+    Install.WantedBy = [ "default.target" ];
   };
 }

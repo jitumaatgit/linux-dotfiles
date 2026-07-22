@@ -9,7 +9,7 @@
 
   outputs = { self, nixpkgs, home-manager, ... }: let
     system = "x86_64-linux";
-    pkgs = import nixpkgs { inherit system; };
+    pkgs = import nixpkgs { inherit system; config.allowUnfree = true; };
   in {
     homeConfigurations."bobbytables" = home-manager.lib.homeManagerConfiguration {
       inherit pkgs;
