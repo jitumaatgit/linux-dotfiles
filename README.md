@@ -9,11 +9,102 @@ Arch + Nix (standalone Home Manager) + Niri dotfiles for a Dell Latitude 7450 (`
 - `home/` — per-program modules (zsh, git, wezterm, nvim, niri, ...) added by later tickets
 - `INSTALL.md` — full Arch install walkthrough (partitioning, btrfs, systemd-boot, pacman base, services, keyd, zram, pacman snapshot hook)
 
-## Apply
+## Quickstart
+
+The complete flow from a blank NVMe to a working desktop:
+
+1. **Arch install + system-level config** — follow [`INSTALL.md`](INSTALL.md) end-to-end (partition, btrfs subvolumes, systemd-boot, pacman base, services, keyd, zram, greetd→`niri-session`, Nix + Home Manager standalone). Reboot, log in as `bobbytables` at the tuigreet prompt → drops into niri.
+2. **Clone this repo**:
+   ```bash
+   git clone https://github.com/jitumaatgit/linux-dotfiles.git ~/linux-dotfiles
+   cd ~/linux-dotfiles
+   ```
+3. **Apply the flake** — one transaction replaces the entire user-space config:
+   ```bash
+   home-manager switch --flake .#bobbytables
+   ```
+   Exits 0 on success (see §Verify below).
+4. **One-time post-switch steps** — these are secrets, SSH keys, external binaries, and private repos that are fundamentally outside any declarative config manager (not user-space config). HM reproduces all user-space config in step 3; these are the irreducible manual leftovers:
+   - SSH key + GitHub auth: `ssh-keygen -t ed25519 -C "jitumaat@protonmail.com" -f ~/.ssh/id_ed25519`, then `gh auth login --web` (uploads the key for git auth + auths the `gh` CLI; token lives in `~/.config/gh/hosts.yml`, outside HM scope) + `gh ssh-key add ~/.ssh/id_ed25519.pub --type signing` (separate upload for the "Verified" badge — see §Git).
+   - `rustup default stable` — `home/packages.nix` ships `rustup` with no toolchain pinned; this installs `rustc`/`cargo`.
+   - `systemctl --user enable --now pipewire pipewire-pulse wireplumber` — pipewire user units are pacman-installed but not enabled per-user (see `INSTALL.md` §6).
+   - Clone `~/notes` (private secrets repo) — the zsh `for f in ~/notes/*.env(N)` loop in `home/zsh.nix` sources API keys (`NVIDIA_API_KEY`, etc.) on shell start.
+   - `npm i -g opencode` — the opencode binary is NOT installed by HM; only its config files are (see §opencode).
+   - `npx skills add -g mattpocock/skills` (or whichever sources) — opencode skills install to `~/.agents/skills/` (user-level), not HM-managed.
+5. **Log in to niri** — `niri-session` is already running from the greetd login. `Super+Return` opens WezTerm (zsh + starship prompt); `Super+Space` opens fuzzel.
+6. **Verify** — run the commands in §Verify below.
+
+## Verify
+
+Run after `home-manager switch --flake .#bobbytables` to confirm the full stack landed:
 
 ```bash
-home-manager switch --flake .#bobbytables
+# 1. The switch itself exits 0 (HM prints "Activating createHome" then returns).
+home-manager switch --flake .#bobbytables --verbose; echo "exit=$?"
+
+# 2. Niri desktop is up (greetd launched niri-session at login).
+niri msg version
+pgrep -x niri >/dev/null && echo "niri up" || echo "niri down"
+
+# 3. WezTerm launches with Catppuccin Mocha + Cascadia Code NF (config parses → exits 0).
+wezterm show-keys --key-table | head    # leader is Ctrl+Space
+
+# 4. Neovim launches LazyVim (lazy.nvim bootstraps plugins on first run).
+nvim --headless "+Lazy! sync" +qa       # one-time plugin install; then `nvim` for real
+
+# 5. CLI tools work (all HM-installed via home/packages.nix + home/zsh.nix).
+bat --version && rg --version && eza --version && btop --version
+
+# 6. ntfy subscription service is active (HM started it via wantedBy=default.target).
+systemctl --user status ntfy-client --no-pager
+ntfy pub --title="test" shift-automator-doomax "hi"   # expect a mako toast
+
+# 7. opencode runs and reads the HM-managed config.
+opencode --version
+test -n "$NVIDIA_API_KEY" && echo "NVIDIA_API_KEY set" || echo "unset — clone ~/notes"
 ```
+
+If any step fails, see the per-module sections below for module-specific verify commands and §Gotchas for known footguns.
+
+## Disaster recovery
+
+**Rebootstrap from `linux-dotfiles` is the entire DR plan.** Git is the only backup.
+
+- The btrfs pacman-hook snapshots (`INSTALL.md` §7) cover rollback for system-level pacman transactions — they are NOT off-machine backups.
+- All user-space config is declarative in this repo. A fresh clone + `home-manager switch --flake .#bobbytables` reproduces the entire user-space on any Arch + Nix + HM machine.
+- `~/notes` (private) is the only other repo needed for a full restore — it holds secrets (`*.env`) and Obsidian notes. Clone it separately.
+- NOT in this repo (re-create on a new machine via the §Quickstart post-switch steps): nvim plugin state (`lazy-lock.json`), opencode skills (`~/.agents/skills/`), `~/.config/gh/hosts.yml`, SSH keys, `~/notes`.
+
+Recovery procedure (on a fresh Arch install that has followed `INSTALL.md` through §9):
+
+```bash
+git clone https://github.com/jitumaatgit/linux-dotfiles.git ~/linux-dotfiles
+cd ~/linux-dotfiles
+home-manager switch --flake .#bobbytables
+# then the post-switch steps in §Quickstart
+```
+
+## Gotchas
+
+Footguns from the plan spec — either resolved in code or documented here so the user/next-agent knows:
+
+- **User is `bobbytables`, not `fomar`/`student`** — `nixos-dotfiles` uses `fomar`; `student` is a stale username from an older Windows machine. This repo uses `bobbytables` everywhere (flake target `.#bobbytables`, `home.username`, ported paths). The `C:/Users/student/...` strings elsewhere in this README are historical "what changed from Windows" notes in the Neovim and btop port sections, not live paths.
+- **Nix-on-Arch is NOT NixOS** — no `nixos-rebuild`, no `/etc/nixos/configuration.nix`, no `nixosConfigurations`. The system is Arch (pacman-managed); only user-space is declarative via standalone Home Manager. `homeConfigurations.bobbytables` is the only flake output.
+- **Home Manager is standalone, not a NixOS module** — see above. The flake pulls HM as an input for `homeManagerConfiguration`; there is no `nixosConfigurations` output.
+- **zsh, not bash** — login shell is zsh (set at `useradd -s` time in `INSTALL.md` §3). Ported from `tablet-dotfiles/.zshrc`, NOT from Windows `.bashrc`. Key changes from the tablet version: `batcat`→`bat`, `foot nvim`→`wezterm start -- nvim`, drop `find='fd'` alias (Arch `fd` is `fd`, not `fdfind`).
+- **`occ()` ported from Windows, not tablet** — tablet's `occ()` has bare-repo git-dir switching for `$HOME/.dotfiles`; this repo is a regular clone, so the simpler Windows `occ()` is used (`opencode run "$@"` / `opencode run --command commit`).
+- **SSH signing, not GPG** — `gpg.format = ssh`, `user.signingkey = ~/.ssh/id_ed25519`, `commit.gpgsign = true`. No GPG keypair, no gpg-agent. `gh ssh-key add --type signing` is a SEPARATE upload from `gh auth login` (required for the "Verified" badge on GitHub).
+- **No nvim-data backup** — the Windows `nvim-data-remote` junction is deliberately not ported. This machine is not ephemeral; lazy.nvim re-resolves plugins on first run (`nvim --headless "+Lazy! sync" +qa`).
+- **No mouse-grid tool** — `keynavish` and `warpd` both deliberately dropped. Use the trackpad.
+- **Don't remap RWin→LCtrl** — that was a Windows AHK thing. On Linux, Super is Niri's Mod key; keep RWin as Super. keyd only remaps Caps (`overload(control, esc)` — tap=Esc, hold=Ctrl).
+- **Mixer is pavucontrol, not pwvucontrol** — `home/niri-extras.nix` installs `pavucontrol` for Bluetooth profile-switching robustness. Do not swap it.
+- **No JACK** — `pipewire-jack` deliberately not installed. Only `pipewire-pulse` + `pipewire-alsa`.
+- **`discard=async` not `fstrim.timer`** — btrfs mount option in `/etc/fstab` (`INSTALL.md` §1). NVMe-only. Do NOT enable `fstrim.timer` (redundant with async discard).
+- **thermald is root, PPD is user toggle** — `thermald` is a root service; `powerprofilesctl` (from `power-profiles-daemon`) is the user-facing 3-mode toggle. Don't try to make thermald user-controllable.
+- **No firewall services running by default** — `ufw` is enabled (default deny incoming), but no services listen in the base install. If `sshd` is ever installed, ufw already covers it.
+- **Plannotator CLI is cross-platform** — not Windows-only. Re-run the install script on Linux (see Plannotator docs); `PLANNOTATOR_DATA_DIR="$HOME/notes/docs/plannotator"` is set by `home/zsh.nix`.
+- **HM flake target is `.#bobbytables`, hostname is `archbook`** — don't conflate. `home-manager switch --flake .#bobbytables` is the command; `archbook` is `/etc/hostname` and mDNS name.
+- **Flush-left `''...''` strings** — Nix indented-string stripping: the closing `''` at column 0 means 0 leading spaces are stripped from each line. All `xdg.configFile` text blocks in `home/*.nix` follow this convention (wezterm/nvim/niri/waybar/ntfy/opencode). Reindenting the Lua/KDL/TOML/JSON inside the `''...''` to match the Nix nesting will strip 0 spaces and the generated file will retain the original indentation; reindenting AND moving the closing `''` will change what gets stripped. The only `${` in these blocks is the intentional Nix interpolation; a literal `${` in the content must be escaped as `''${`.
 
 ## Shell
 
