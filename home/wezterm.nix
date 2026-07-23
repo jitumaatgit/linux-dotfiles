@@ -23,6 +23,7 @@ config.font = wezterm.font_with_fallback({
 	"CaskaydiaCove NF",
 	"JetBrains Mono",
 })
+config.enable_kitty_keyboard = true
 config.animation_fps = 1
 config.cursor_blink_ease_in = "Constant"
 config.cursor_blink_ease_out = "Constant"
