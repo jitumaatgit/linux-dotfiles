@@ -4,7 +4,7 @@ Walks a human from a blank NVMe to a booted Arch system with Nix + Home Manager 
 
 Hardware target: **Dell Latitude 7450** — 32GB RAM, 512GB Samsung PM9C1a NVMe, Intel Core Ultra 7 165U (Meteor Lake), Intel Arc Graphics (integrated, no NVIDIA), Intel Wi-Fi 7 BE200 (no ethernet), Intel Wireless Bluetooth.
 
-System-level config that Home Manager cannot manage (`/etc/keyd/default.conf`, `/etc/pacman.d/hooks/snap.hook`, zram-generator, fstab, greetd, services) lives in this document. Everything user-space is declarative via the flake.
+System-level config that Home Manager cannot manage (keyd's `/etc/keyd/default.conf` — source-of-truth in `docs/keyd/`, installed by `docs/keyd/apply.sh`; `/etc/pacman.d/hooks/snap.hook`, zram-generator, fstab, greetd, services) lives in this document. Everything user-space is declarative via the flake.
 
 ---
 
@@ -387,21 +387,49 @@ This is the only firmware path once Windows is wiped (Dell LVFS).
 
 ## 7. System-level config files (not HM-managed)
 
-### `/etc/keyd/default.conf` — Caps tap=Esc, hold=Ctrl
+### `/etc/keyd/default.conf` — Caps tap=Esc, hold=Ctrl; Mac-style mods; Copilot→Alt
+
+keyd sits at the evdev layer — below niri's `xkb {}` block, below XKB, below any compositor IME — so bindings here persist across every VT/DE/compositor/IME. This is the lowest practical binding level short of a kernel patch. Home Manager can't own `/etc/`, so the config and an apply script live in the repo under `docs/keyd/` and are installed to `/etc/keyd/` post-boot:
+
+```bash
+sudo ~/linux-dotfiles/docs/keyd/apply.sh
+```
+
+That copies `docs/keyd/default.conf` → `/etc/keyd/default.conf`, runs `keyd check` (aborts on parse error so a bad config can never brick the keyboard), and restarts `keyd`. The config in effect:
 
 ```
-[Global]
-default = main
+[ids]
+# Match every keyboard keyd identifies as such (AT keyboard + BT MG65).
+*
 
 [main]
+
+# CapsLock: hold = Control, tap = Escape.
 capslock = overload(control, esc)
-```
 
-`overload(control, esc)` = hold for Control, tap for Esc. Applies globally to both keyboards (built-in + MG65 BT3).
+# Mac-style modifier layout. keyd evaluates chords on physical key names
+# pre-remap, so the Copilot chord below is independent of these [main] swaps.
+rightalt = layer(control)   # Right Alt  -> Control
+leftalt = layer(meta)       # Left Alt   -> Meta/Super (niri's Mod)
+leftmeta = layer(alt)       # Windows    -> Alt
 
-> **Footgun**: do NOT remap RWin→LCtrl. That was a Windows AHK thing. On Linux, Super is Niri's Mod key — keep RWin as Super. See plan spec.
+# Microsoft "Copilot" key -> Alt, via a chord binding.
+# The Copilot key emits f23 (KEY_F23) on the AT keyboard, but the firmware
+# fires a real leftmeta+leftshift physical chord first (the Windows Copilot
+# shortcut). `f23 = layer(alt)` alone is insufficient: the meta/shift
+# physical keydowns arrive on the virtual keyboard before f23, so strict
+# apps (Firefox/Zen on Wayland) receive Meta+Shift+Alt and ignore the
+# shortcut. A keyd *chord* binding (`key1+key2+key3 = <action>`, default
+# 50ms window) treats the three keys as a single unit and EMITS ONLY the
+# bound action, swallowing the individual physical keydowns — so a clean
+# Alt reaches apps.
+leftmeta+leftshift+f23 = layer(alt)
 
-`keyd` service enabled in §6.
+> **Footgun — section casing + `[ids]` are mandatory.** The previous version of this file used `[Global]` (capital G). keyd section names are lowercase; an unknown header is parsed as a layer name, so `default = main` was silently dropped and keyd never applied any binding — CapsLock kept toggling capitalisation and lighting the LED. keyd also requires an `[ids]` section as the FIRST section of any config; without one the file matches no device. `sudo keyd check` catches both immediately — always run it after editing.
+
+> **Footgun — the Windows/Super key is now Alt, not Super.** This config deliberately remaps `leftmeta` (the Windows key) to Alt so the Right-Alt key can become Control and Left-Alt can become Meta/Super for niri. Niri's `Mod` is therefore triggered by the **Left Alt** key, not the Windows key. If you revert the `[main]` modifier swaps, niri shortcuts will stop working until you either re-apply the remap or rebind niri's `Mod` to the physical Super key.
+
+`keyd` service enabled in §6; `evtest` (pacman) is useful for verifying what actually reaches apps via `/dev/input/event13` (the keyd virtual keyboard).
 
 ### `/etc/pacman.d/hooks/snap.hook` — auto-snapshot before every pacman transaction
 
@@ -558,7 +586,7 @@ Git signing is SSH (not GPG): ticket #4's `home/git.nix` sets `gpg.format = ssh`
 - [x] Nix (Determinate Systems installer) + Home Manager standalone install
 - [x] Base pacman package list documented (kernel, systemd, mesa, libvirt, greetd, niri, base fonts, NetworkManager, thermald, fwupd, ufw, cups, keyd, audio, bluetooth, Wayland stack)
 - [x] Services to enable documented (NetworkManager, systemd-resolved, systemd-timesyncd, systemd-oomd, thermald, power-profiles-daemon, greetd→niri-session, ufw, cups, libvirtd, bluetooth; fstrim NOT enabled)
-- [x] `/etc/keyd/default.conf`: Caps tap=Esc, hold=Ctrl; NO RWin→LCtrl remap
+- [x] `/etc/keyd/default.conf`: Caps tap=Esc, hold=Ctrl; Mac-style mods (RAlt→Ctrl, LAlt→Meta, Win→Alt); Copilot key (`f23`) → Alt via `leftmeta+leftshift+f23 = layer(alt)` chord. Source-of-truth in `docs/keyd/default.conf`, applied via `docs/keyd/apply.sh` (see §7)
 - [x] `/etc/pacman.d/hooks/snap.hook` + `snap-pacman` script: auto-snapshot before every `pacman -Syu`
 - [x] zram-generator config (no disk swap, no hibernation)
 - [x] User `bobbytables` created with zsh login shell (HM manages zsh config, not the login shell)
