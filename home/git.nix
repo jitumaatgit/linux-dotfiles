@@ -3,15 +3,13 @@
 {
   programs.git = {
     enable = true;
-    userName = "Jitu";
-    userEmail = "jitumaat@protonmail.com";
 
-    signing = {
-      key = "${config.home.homeDirectory}/.ssh/id_ed25519";
-      signByDefault = true;
-    };
+    # Home Manager 25.11: userName/userEmail/extraConfig were renamed into
+    # `settings` (mkRenamedOptionModule). signing.key/signByDefault are unchanged.
+    settings = {
+      user.name = "Jitu";
+      user.email = "jitumaat@protonmail.com";
 
-    extraConfig = {
       gpg.format = "ssh";
 
       init.defaultBranch = "main";
@@ -37,6 +35,11 @@
         diffview.cmd = ''nvim -c "DiffviewOpen"'';
         nvim.cmd = ''nvim -d $LOCAL $REMOTE $MERGED -c "wincmd J"'';
       };
+    };
+
+    signing = {
+      key = "${config.home.homeDirectory}/.ssh/id_ed25519";
+      signByDefault = true;
     };
   };
 }
