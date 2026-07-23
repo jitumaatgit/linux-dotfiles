@@ -306,6 +306,16 @@ end)
 config.leader = { key = "Space", mods = "CTRL", timeout_milliseconds = 4294967295 }
 -- Main key assignments
 config.keys = {
+	-- Force the legacy Delete sequence (ESC[3~) regardless of kitty protocol.
+	-- Under enable_kitty_keyboard = true (line 26), Delete is encoded as
+	-- CSI 3 ~ — zsh/readline parse only the trailing `~` as a literal char
+	-- and echo it instead of deleting. This binding supersedes the protocol
+	-- encoding for the bare Delete key. See wezterm/wezterm#6940.
+	{ key = "Delete", action = act.SendString("\x1b[3~") },
+	-- Also fix Home/End for the same reason — kitty protocol encodes them as
+	-- CSI 1 ~ and CSI 4 ~, which readline misreads. Send legacy sequences.
+	{ key = "Home", action = act.SendString("\x1b[H") },
+	{ key = "End", action = act.SendString("\x1b[F") },
 	-- Tabs
 	{ key = "c", mods = "LEADER", action = act.SpawnTab("CurrentPaneDomain") },
 	{ key = "&", mods = "LEADER", action = act.CloseCurrentTab({ confirm = true }) },
