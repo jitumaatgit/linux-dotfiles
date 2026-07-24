@@ -75,7 +75,7 @@ in {
       export MANROFFOPT="-c"
       export NODE_EXTRA_CA_CERTS=/etc/ssl/certs/ca-certificates.crt
       export RIPGREP_CONFIG_PATH="$HOME/.ripgreprc"
-      export PATH="$HOME/.cargo/bin:$HOME/.local/bin:$PATH"
+      export PATH="$HOME/.cargo/bin:$HOME/.local/bin:$HOME/.bun/bin:$PATH"
 
       for f in ~/notes/*.env(N); do [ -f "$f" ] && . "$f"; done
       unset f
