@@ -82,6 +82,16 @@ in {
     '';
   };
 
+  # Target of RIPGREP_CONFIG_PATH (exported above) — ripgrep errors out if this
+  # file is missing, so keep it managed alongside the export. Content mirrors the
+  # tablet's ~/.ripgreprc (see notes repo, cross-port-2026-07-18 handoff §4).
+  home.file.".ripgreprc".text = ''
+    --smart-case
+    # Suggestions (uncomment to enable):
+    # --hidden
+    # --glob=!.git/*
+  '';
+
   programs.fzf = {
     enable = true;
     enableZshIntegration = true;
