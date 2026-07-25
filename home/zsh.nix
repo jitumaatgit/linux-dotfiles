@@ -1,4 +1,4 @@
-{ config, ... }:
+{ config, pkgs, ... }:
 
 let
   fdFiles = "fd --type f --strip-cwd-prefix";
@@ -37,6 +37,18 @@ in {
         alias ls='eza --icons --group-directories-first -a'
         alias cat='bat --paging=never'
         alias grep='rg --color=auto'
+      fi
+
+      # Source fzf's zsh key-bindings/completions only when a real terminal is
+      # attached. HM's enableZshIntegration renders the `fzf --zsh` source line
+      # unconditionally — and fzf's init saves/restores ALL shell options via
+      # `eval 'options=(...)'` in its top-level always block. In `zsh -ic`
+      # (interactive forced via -i, but no TTY because -c is used) the restore's
+      # attempt to reassign `options[zle]` fails with `(eval):1: can't change
+      # option: zle`.  Guarding with `-t 0` (stdin is a terminal) lets real
+      # interactive shells source fzf while `zsh -ic` (non‑TTY) skips it.
+      if [[ -o interactive ]] && [[ -t 0 ]]; then
+        source <("${pkgs.fzf}/bin/fzf" --zsh)
       fi
 
       setopt auto_cd correct hist_reduce_blanks
@@ -101,7 +113,9 @@ in {
 
   programs.fzf = {
     enable = true;
-    enableZshIntegration = true;
+    # Disabled: HM renders this unguarded; sourced manually in initExtra
+    # under a `-t 0` guard so `zsh -ic` does not error.
+    enableZshIntegration = false;
     defaultOptions = [ "--height=40%" "--layout=reverse" "--border" "--info=inline" ];
     defaultCommand = fdFiles;
     fileWidgetCommand = fdFiles;
