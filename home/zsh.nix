@@ -20,9 +20,6 @@ in {
     };
 
     shellAliases = {
-      ls = "eza --icons --group-directories-first -a";
-      cat = "bat --paging=never";
-      grep = "rg --color=auto";
       lg = "lazygit";
       i = "z -i";
       zi = "z -i";
@@ -32,6 +29,16 @@ in {
     };
 
     initExtra = ''
+      # Tool-shadowing aliases are scoped to interactive shells so non-interactive
+      # `zsh -c` callers (e.g. omp shell-snapshot) see the real `grep`/`cat`/`ls`
+      # binaries — otherwise `alias grep='rg --color=auto'` turns bare `grep -vE`
+      # in capture scripts into `rg -vE` (rg's -E is encoding, not extended regex).
+      if [[ -o interactive ]]; then
+        alias ls='eza --icons --group-directories-first -a'
+        alias cat='bat --paging=never'
+        alias grep='rg --color=auto'
+      fi
+
       setopt auto_cd correct hist_reduce_blanks
 
       zstyle ':completion:*' menu select
