@@ -28,7 +28,7 @@ in {
       preview = "bat --style=plain --paging=always";
     };
 
-    initExtra = ''
+    initContent = ''
       # Tool-shadowing aliases are scoped to interactive shells so non-interactive
       # `zsh -c` callers (e.g. omp shell-snapshot) see the real `grep`/`cat`/`ls`
       # binaries — otherwise `alias grep='rg --color=auto'` turns bare `grep -vE`
@@ -113,7 +113,7 @@ in {
 
   programs.fzf = {
     enable = true;
-    # Disabled: HM renders this unguarded; sourced manually in initExtra
+    # Disabled: HM renders this unguarded; sourced manually in initContent
     # under a `-t 0` guard so `zsh -ic` does not error.
     enableZshIntegration = false;
     defaultOptions = [ "--height=40%" "--layout=reverse" "--border" "--info=inline" ];
