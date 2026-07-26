@@ -84,34 +84,34 @@ window-rule {
 }
 
 binds {
-    // Overlay order = config order; titles are Pango markup. The popup is
-    // single-column, so each row packs 2-3 entries: the pill shows the real
-    // key, folded entries' keys are written into the title text and their
-    // binds are hotkey-overlay-title=null. Groups open with a bold colored
-    // heading (Catppuccin Mocha) after a thin spacer line.
+    // Overlay order = config order. Titles are Pango markup: first entry of
+    // each group carries a heading line (+ leading blank line as group spacer);
+    // category prefixes use Catppuccin Mocha accents. Merged siblings use
+    // hotkey-overlay-title=null so they don't reappear unpaired. Media and
+    // screenshot binds are hidden from the overlay entirely (title=null).
 
     // Session
-    Mod+Shift+Slash hotkey-overlay-title="<span weight=\"bold\" foreground=\"#f38ba8\" letter_spacing=\"1536\">SESSION</span>\nImportant Hotkeys (this popup)   <span foreground=\"#585b70\">•</span>   <span weight=\"bold\" foreground=\"#f38ba8\">Mod+Escape</span> Lock Screen (swaylock)" { show-hotkey-overlay; }
-    Mod+Escape  hotkey-overlay-title=null { spawn "swaylock"; }
-    Mod+Shift+E hotkey-overlay-title="Exit niri   <span foreground=\"#585b70\">•</span>   <span weight=\"bold\" foreground=\"#f38ba8\">Mod+Shift+Escape</span> Inhibit Keys (VM passthrough)" { quit; }
-    Mod+Shift+Escape hotkey-overlay-title=null { toggle-keyboard-shortcuts-inhibit; }
+    Mod+Shift+Slash hotkey-overlay-title="<span weight=\"bold\" foreground=\"#f38ba8\" letter_spacing=\"1536\">SESSION</span>\nImportant Hotkeys (this popup)" { show-hotkey-overlay; }
+    Mod+Escape  hotkey-overlay-title="<span foreground=\"#f38ba8\">Session:</span> Lock Screen (swaylock)" { spawn "swaylock"; }
+    Mod+Shift+E hotkey-overlay-title="<span foreground=\"#f38ba8\">Session:</span> Exit niri" { quit; }
+    Mod+Shift+Escape hotkey-overlay-title="<span foreground=\"#f38ba8\">Session:</span> Inhibit Keys (VM passthrough)" { toggle-keyboard-shortcuts-inhibit; }
 
     // Launch
-    Mod+Return hotkey-overlay-title="<span size=\"xx-small\"> </span>\n<span weight=\"bold\" foreground=\"#a6e3a1\" letter_spacing=\"1536\">LAUNCH</span>\nTerminal (wezterm)   <span foreground=\"#585b70\">•</span>   <span weight=\"bold\" foreground=\"#a6e3a1\">Mod+Space</span> App Launcher (fuzzel)" { spawn "wezterm"; }
-    Mod+Space  hotkey-overlay-title=null { spawn "fuzzel"; }
+    Mod+Return hotkey-overlay-title="\n<span weight=\"bold\" foreground=\"#a6e3a1\" letter_spacing=\"1536\">LAUNCH</span>\nTerminal (wezterm)" { spawn "wezterm"; }
+    Mod+Space  hotkey-overlay-title="<span foreground=\"#a6e3a1\">Launch:</span> App Launcher (fuzzel)" { spawn "fuzzel"; }
 
     // Focus (columns = H/L, workspaces = K/J, in-column windows = Up/Down)
-    Mod+H hotkey-overlay-title="<span size=\"xx-small\"> </span>\n<span weight=\"bold\" foreground=\"#89b4fa\" letter_spacing=\"1536\">FOCUS</span>\nColumn Left/Right (H/L)   <span foreground=\"#585b70\">•</span>   <span weight=\"bold\" foreground=\"#89b4fa\">Mod+J</span> Workspace Down/Up (J/K)   <span foreground=\"#585b70\">•</span>   <span weight=\"bold\" foreground=\"#89b4fa\">Mod+Up</span> Window Up/Down (arrows)" { focus-column-left; }
+    Mod+H hotkey-overlay-title="\n<span weight=\"bold\" foreground=\"#89b4fa\" letter_spacing=\"1536\">FOCUS</span>\nColumn Left/Right (H/L)" { focus-column-left; }
     Mod+L hotkey-overlay-title=null { focus-column-right; }
-    Mod+J hotkey-overlay-title=null { focus-workspace-down; }
+    Mod+J hotkey-overlay-title="<span foreground=\"#89b4fa\">Focus:</span> Workspace Down/Up (J/K)" { focus-workspace-down; }
     Mod+K hotkey-overlay-title=null { focus-workspace-up; }
-    Mod+Up   hotkey-overlay-title=null { focus-window-up; }
+    Mod+Up   hotkey-overlay-title="<span foreground=\"#89b4fa\">Focus:</span> Window Up/Down (arrows)" { focus-window-up; }
     Mod+Down { focus-window-down; }
-    Mod+Home hotkey-overlay-title="First/Last Column (Home/End)   <span foreground=\"#585b70\">•</span>   <span weight=\"bold\" foreground=\"#89b4fa\">Mod+1</span> Workspace 1-9" { focus-column-first; }
+    Mod+Home hotkey-overlay-title="<span foreground=\"#89b4fa\">Focus:</span> First/Last Column (Home/End)" { focus-column-first; }
     Mod+End  { focus-column-last; }
     Mod+Left  { focus-column-left; }
     Mod+Right { focus-column-right; }
-    Mod+1 hotkey-overlay-title=null { focus-workspace 1; }
+    Mod+1 hotkey-overlay-title="<span foreground=\"#89b4fa\">Focus:</span> Workspace 1-9" { focus-workspace 1; }
     Mod+2 { focus-workspace 2; }
     Mod+3 { focus-workspace 3; }
     Mod+4 { focus-workspace 4; }
@@ -122,15 +122,15 @@ binds {
     Mod+9 { focus-workspace 9; }
 
     // Move (Shift = within workspace, Ctrl = across workspaces)
-    Mod+Shift+H hotkey-overlay-title="<span size=\"xx-small\"> </span>\n<span weight=\"bold\" foreground=\"#cba6f7\" letter_spacing=\"1536\">MOVE</span>\nColumn Left/Right (Shift+H/L)   <span foreground=\"#585b70\">•</span>   <span weight=\"bold\" foreground=\"#cba6f7\">Mod+Shift+K</span> Window Up/Down (Shift+K/J)   <span foreground=\"#585b70\">•</span>   <span weight=\"bold\" foreground=\"#cba6f7\">Mod+Ctrl+Home</span> Column to First/Last" { move-column-left; }
+    Mod+Shift+H hotkey-overlay-title="\n<span weight=\"bold\" foreground=\"#cba6f7\" letter_spacing=\"1536\">MOVE</span>\nColumn Left/Right (Shift+H/L)" { move-column-left; }
     Mod+Shift+L hotkey-overlay-title=null { move-column-right; }
-    Mod+Shift+K hotkey-overlay-title=null { move-window-up; }
+    Mod+Shift+K hotkey-overlay-title="<span foreground=\"#cba6f7\">Move:</span> Window Up/Down (Shift+K/J)" { move-window-up; }
     Mod+Shift+J { move-window-down; }
-    Mod+Ctrl+Home hotkey-overlay-title=null { move-column-to-first; }
+    Mod+Ctrl+Home hotkey-overlay-title="<span foreground=\"#cba6f7\">Move:</span> Column to First/Last (Ctrl+Home/End)" { move-column-to-first; }
     Mod+Ctrl+End  { move-column-to-last; }
-    Mod+Ctrl+J hotkey-overlay-title="Column to Workspace Down/Up (Ctrl+J/K)   <span foreground=\"#585b70\">•</span>   <span weight=\"bold\" foreground=\"#cba6f7\">Mod+Shift+1</span> Column to Workspace 1-9   <span foreground=\"#585b70\">•</span>   <span weight=\"bold\" foreground=\"#cba6f7\">Mod+Shift+PgUp</span> Reorder Workspaces (PgUp/PgDn)" { move-column-to-workspace-down; }
+    Mod+Ctrl+J hotkey-overlay-title="<span foreground=\"#cba6f7\">Move:</span> Column to Workspace Down/Up (Ctrl+J/K)" { move-column-to-workspace-down; }
     Mod+Ctrl+K hotkey-overlay-title=null { move-column-to-workspace-up; }
-    Mod+Shift+1 hotkey-overlay-title=null { move-column-to-workspace 1; }
+    Mod+Shift+1 hotkey-overlay-title="<span foreground=\"#cba6f7\">Move:</span> Column to Workspace 1-9 (Shift+1-9)" { move-column-to-workspace 1; }
     Mod+Shift+2 { move-column-to-workspace 2; }
     Mod+Shift+3 { move-column-to-workspace 3; }
     Mod+Shift+4 { move-column-to-workspace 4; }
@@ -139,45 +139,45 @@ binds {
     Mod+Shift+7 { move-column-to-workspace 7; }
     Mod+Shift+8 { move-column-to-workspace 8; }
     Mod+Shift+9 { move-column-to-workspace 9; }
-    Mod+Shift+Page_Up   hotkey-overlay-title=null { move-workspace-up; }
+    Mod+Shift+Page_Up   hotkey-overlay-title="<span foreground=\"#cba6f7\">Move:</span> Workspace Up/Down, reorder (Shift+PgUp/PgDn)" { move-workspace-up; }
     Mod+Shift+Page_Down { move-workspace-down; }
-    Mod+bracketleft  hotkey-overlay-title="Consume or Expel Window ([ / ])   <span foreground=\"#585b70\">•</span>   <span weight=\"bold\" foreground=\"#cba6f7\">Mod+Comma</span> Consume Into Column   <span foreground=\"#585b70\">•</span>   <span weight=\"bold\" foreground=\"#cba6f7\">Mod+Period</span> Expel From Column" { consume-or-expel-window-left; }
+    Mod+bracketleft  hotkey-overlay-title="<span foreground=\"#cba6f7\">Move:</span> Consume or Expel Window ([ / ])" { consume-or-expel-window-left; }
     Mod+bracketright hotkey-overlay-title=null { consume-or-expel-window-right; }
-    Mod+Comma  hotkey-overlay-title=null { consume-window-into-column; }
-    Mod+Period hotkey-overlay-title=null { expel-window-from-column; }
+    Mod+Comma  hotkey-overlay-title="<span foreground=\"#cba6f7\">Move:</span> Consume Window Into Column" { consume-window-into-column; }
+    Mod+Period hotkey-overlay-title="<span foreground=\"#cba6f7\">Move:</span> Expel Window From Column" { expel-window-from-column; }
 
     // Window
-    Mod+Q hotkey-overlay-title="<span size=\"xx-small\"> </span>\n<span weight=\"bold\" foreground=\"#fab387\" letter_spacing=\"1536\">WINDOW</span>\nClose   <span foreground=\"#585b70\">•</span>   <span weight=\"bold\" foreground=\"#fab387\">Mod+F</span> Fullscreen   <span foreground=\"#585b70\">•</span>   <span weight=\"bold\" foreground=\"#fab387\">Mod+M</span> Maximize Column" { close-window; }
-    Mod+F hotkey-overlay-title=null { fullscreen-window; }
-    Mod+M hotkey-overlay-title=null { maximize-column; }
-    Mod+Ctrl+F hotkey-overlay-title="Expand to Available Width   <span foreground=\"#585b70\">•</span>   <span weight=\"bold\" foreground=\"#fab387\">Mod+W</span> Tabbed Display   <span foreground=\"#585b70\">•</span>   <span weight=\"bold\" foreground=\"#fab387\">Mod+V</span> Toggle Floating" { expand-column-to-available-width; }
-    Mod+W hotkey-overlay-title=null { toggle-column-tabbed-display; }
-    Mod+V hotkey-overlay-title=null { toggle-window-floating; }
-    Mod+Shift+V hotkey-overlay-title="Focus Floating vs Tiling" { switch-focus-between-floating-and-tiling; }
+    Mod+Q hotkey-overlay-title="\n<span weight=\"bold\" foreground=\"#fab387\" letter_spacing=\"1536\">WINDOW</span>\nClose" { close-window; }
+    Mod+F hotkey-overlay-title="<span foreground=\"#fab387\">Window:</span> Fullscreen" { fullscreen-window; }
+    Mod+M hotkey-overlay-title="<span foreground=\"#fab387\">Window:</span> Maximize Column" { maximize-column; }
+    Mod+Ctrl+F hotkey-overlay-title="<span foreground=\"#fab387\">Window:</span> Expand to Available Width" { expand-column-to-available-width; }
+    Mod+W hotkey-overlay-title="<span foreground=\"#fab387\">Window:</span> Tabbed Column Display" { toggle-column-tabbed-display; }
+    Mod+V hotkey-overlay-title="<span foreground=\"#fab387\">Window:</span> Toggle Floating" { toggle-window-floating; }
+    Mod+Shift+V hotkey-overlay-title="<span foreground=\"#fab387\">Window:</span> Focus Floating vs Tiling" { switch-focus-between-floating-and-tiling; }
 
     // Layout (widths, heights, centering)
-    Mod+R hotkey-overlay-title="<span size=\"xx-small\"> </span>\n<span weight=\"bold\" foreground=\"#f9e2af\" letter_spacing=\"1536\">LAYOUT</span>\nPreset Widths (Shift+R rev)   <span foreground=\"#585b70\">•</span>   <span weight=\"bold\" foreground=\"#f9e2af\">Mod+Minus</span> Column Width -/+10%   <span foreground=\"#585b70\">•</span>   <span weight=\"bold\" foreground=\"#f9e2af\">Mod+Shift+Minus</span> Window Height -/+10%" { switch-preset-column-width; }
+    Mod+R hotkey-overlay-title="\n<span weight=\"bold\" foreground=\"#f9e2af\" letter_spacing=\"1536\">LAYOUT</span>\nPreset Widths (Shift+R = reverse)" { switch-preset-column-width; }
     Mod+Shift+R { switch-preset-column-width-back; }
-    Mod+Minus hotkey-overlay-title=null { set-column-width "-10%"; }
+    Mod+Minus hotkey-overlay-title="<span foreground=\"#f9e2af\">Layout:</span> Column Width -/+10% (- /=)" { set-column-width "-10%"; }
     Mod+Equal { set-column-width "+10%"; }
-    Mod+Shift+Minus hotkey-overlay-title=null { set-window-height "-10%"; }
+    Mod+Shift+Minus hotkey-overlay-title="<span foreground=\"#f9e2af\">Layout:</span> Window Height -/+10% (Shift+- /=)" { set-window-height "-10%"; }
     Mod+Shift+Equal { set-window-height "+10%"; }
-    Mod+Ctrl+R hotkey-overlay-title="Reset Window Height   <span foreground=\"#585b70\">•</span>   <span weight=\"bold\" foreground=\"#f9e2af\">Mod+C</span> Center Column / All (Ctrl+C)" { reset-window-height; }
-    Mod+C hotkey-overlay-title=null { center-column; }
+    Mod+Ctrl+R hotkey-overlay-title="<span foreground=\"#f9e2af\">Layout:</span> Reset Window Height" { reset-window-height; }
+    Mod+C hotkey-overlay-title="<span foreground=\"#f9e2af\">Layout:</span> Center Column / All Visible (C / Ctrl+C)" { center-column; }
     Mod+Ctrl+C { center-visible-columns; }
 
     // Monitor (arrow layer, niri defaults)
-    Mod+Shift+Left  hotkey-overlay-title="<span size=\"xx-small\"> </span>\n<span weight=\"bold\" foreground=\"#94e2d5\" letter_spacing=\"1536\">MONITOR</span>\nFocus (Shift+arrows)   <span foreground=\"#585b70\">•</span>   <span weight=\"bold\" foreground=\"#94e2d5\">Mod+Shift+Ctrl+Left</span> Move Column (Shift+Ctrl+arrows)" { focus-monitor-left; }
+    Mod+Shift+Left  hotkey-overlay-title="\n<span weight=\"bold\" foreground=\"#94e2d5\" letter_spacing=\"1536\">MONITOR</span>\nFocus (Shift+arrows)" { focus-monitor-left; }
     Mod+Shift+Down  { focus-monitor-down; }
     Mod+Shift+Up    { focus-monitor-up; }
     Mod+Shift+Right { focus-monitor-right; }
-    Mod+Shift+Ctrl+Left  hotkey-overlay-title=null { move-column-to-monitor-left; }
+    Mod+Shift+Ctrl+Left  hotkey-overlay-title="<span foreground=\"#94e2d5\">Monitor:</span> Move Column (Shift+Ctrl+arrows)" { move-column-to-monitor-left; }
     Mod+Shift+Ctrl+Down  { move-column-to-monitor-down; }
     Mod+Shift+Ctrl+Up    { move-column-to-monitor-up; }
     Mod+Shift+Ctrl+Right { move-column-to-monitor-right; }
 
-    // View (+ screenshot)
-    Mod+O hotkey-overlay-title="<span size=\"xx-small\"> </span>\n<span weight=\"bold\" foreground=\"#89dceb\" letter_spacing=\"1536\">VIEW</span>\nToggle Overview   <span foreground=\"#585b70\">•</span>   <span weight=\"bold\" foreground=\"#f5c2e7\">Mod+Shift+S</span> Screenshot Region to Clipboard" { toggle-overview; }
+    // View
+    Mod+O hotkey-overlay-title="\n<span weight=\"bold\" foreground=\"#89dceb\" letter_spacing=\"1536\">VIEW</span>\nToggle Overview" { toggle-overview; }
 
     // Screenshot — grim+slurp, clipboard-only (per #8 issue). swappy
     // deliberately NOT installed (plan spec). Alternative: niri's built-in
@@ -185,7 +185,7 @@ binds {
     // set + `~/Pictures/Screenshots/` to exist) — see #7 handoff.
     // `\"$(slurp)\"` is KDL-escaped `"`; the shell expands `$(slurp)` to the
     // selected region. grim+slurp+wl-clipboard are HM-installed (niri-extras).
-    // Overlay entry lives in the VIEW row above.
+    // Hidden from the hotkey overlay (title=null).
     Mod+Shift+S hotkey-overlay-title=null { spawn-sh "grim -g \"$(slurp)\" - | wl-copy"; }
 
     // Media — volume (wireplumber wpctl) + brightness (brightnessctl) FN keys.
@@ -194,7 +194,8 @@ binds {
     // volume/brightness FN keys do nothing. wpctl is pacman-installed (pipewire
     // stack, INSTALL.md §5); brightnessctl is HM-installed (niri-extras.nix);
     // swaylock is pacman-installed (PAM config, HM programs.swaylock package=null).
-    XF86AudioRaiseVolume allow-when-locked=true hotkey-overlay-title="<span size=\"xx-small\"> </span>\n<span weight=\"bold\" foreground=\"#b4befe\" letter_spacing=\"1536\">MEDIA</span>\nVolume Up/Down/Mute   <span foreground=\"#585b70\">•</span>   <span weight=\"bold\" foreground=\"#b4befe\">Brightness Keys</span> Brightness Up/Down" { spawn-sh "wpctl set-volume @DEFAULT_AUDIO_SINK@ 0.1+ -l 1.0"; }
+    // Hidden from the hotkey overlay (title=null).
+    XF86AudioRaiseVolume allow-when-locked=true hotkey-overlay-title=null { spawn-sh "wpctl set-volume @DEFAULT_AUDIO_SINK@ 0.1+ -l 1.0"; }
     XF86AudioLowerVolume allow-when-locked=true hotkey-overlay-title=null { spawn-sh "wpctl set-volume @DEFAULT_AUDIO_SINK@ 0.1-"; }
     XF86AudioMute        allow-when-locked=true hotkey-overlay-title=null { spawn-sh "wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle"; }
     XF86MonBrightnessUp   allow-when-locked=true hotkey-overlay-title=null { spawn "brightnessctl" "--class=backlight" "set" "+10%"; }
