@@ -110,6 +110,17 @@ binds {
     Mod+Shift+K { move-window-up; }
     Mod+Shift+J { move-window-down; }
 
+    // Move column across workspaces (Ctrl tier); consume/expel across columns
+    Mod+Ctrl+K { move-column-to-workspace-up; }
+    Mod+Ctrl+J { move-column-to-workspace-down; }
+    Mod+Shift+bracketleft  { consume-or-expel-window-left; }
+    Mod+Shift+bracketright { consume-or-expel-window-right; }
+
+    // Column sizing + floating
+    Mod+M { maximize-column; }
+    Mod+V { toggle-window-floating; }
+    Mod+Shift+V { switch-focus-between-floating-and-tiling; }
+
     // Workspaces 1-9
     Mod+1 { focus-workspace 1; }
     Mod+2 { focus-workspace 2; }
