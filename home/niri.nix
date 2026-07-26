@@ -96,30 +96,77 @@ binds {
     Mod+Q { close-window; }
     Mod+F { fullscreen-window; }
 
-    // Focus (column nav = H/L, workspace nav = K/J, in-column = [/])
+    // Focus (columns = H/L, workspaces = K/J, in-column windows = Up/Down)
     Mod+H { focus-column-left; }
     Mod+L { focus-column-right; }
     Mod+K { focus-workspace-up; }
     Mod+J { focus-workspace-down; }
-    Mod+bracketleft { focus-window-up; }
-    Mod+bracketright { focus-window-down; }
+    Mod+Left  { focus-column-left; }
+    Mod+Right { focus-column-right; }
+    Mod+Up    { focus-window-up; }
+    Mod+Down  { focus-window-down; }
+    Mod+Home  { focus-column-first; }
+    Mod+End   { focus-column-last; }
 
     // Move (column = H/L, in-column window = K/J)
     Mod+Shift+H { move-column-left; }
     Mod+Shift+L { move-column-right; }
     Mod+Shift+K { move-window-up; }
     Mod+Shift+J { move-window-down; }
+    Mod+Ctrl+Home { move-column-to-first; }
+    Mod+Ctrl+End  { move-column-to-last; }
 
-    // Move column across workspaces (Ctrl tier); consume/expel across columns
+    // Move column across workspaces (Ctrl tier); reorder workspaces
     Mod+Ctrl+K { move-column-to-workspace-up; }
     Mod+Ctrl+J { move-column-to-workspace-down; }
-    Mod+Shift+bracketleft  { consume-or-expel-window-left; }
-    Mod+Shift+bracketright { consume-or-expel-window-right; }
+    Mod+Shift+Page_Up   { move-workspace-up; }
+    Mod+Shift+Page_Down { move-workspace-down; }
 
-    // Column sizing + floating
+    // Consume/expel windows across columns (niri default binds)
+    Mod+bracketleft  { consume-or-expel-window-left; }
+    Mod+bracketright { consume-or-expel-window-right; }
+    Mod+Comma  { consume-window-into-column; }
+    Mod+Period { expel-window-from-column; }
+
+    // Column sizing, centering, tabbed display, floating
     Mod+M { maximize-column; }
+    Mod+Ctrl+F { expand-column-to-available-width; }
+    Mod+C { center-column; }
+    Mod+Ctrl+C { center-visible-columns; }
+    Mod+W { toggle-column-tabbed-display; }
+    Mod+Shift+R { switch-preset-column-width-back; }
+    Mod+Ctrl+R { reset-window-height; }
+    Mod+Shift+Minus { set-window-height "-10%"; }
+    Mod+Shift+Equal { set-window-height "+10%"; }
     Mod+V { toggle-window-floating; }
     Mod+Shift+V { switch-focus-between-floating-and-tiling; }
+
+    // Multi-monitor (arrow layer, niri defaults)
+    Mod+Shift+Left  { focus-monitor-left; }
+    Mod+Shift+Down  { focus-monitor-down; }
+    Mod+Shift+Up    { focus-monitor-up; }
+    Mod+Shift+Right { focus-monitor-right; }
+    Mod+Shift+Ctrl+Left  { move-column-to-monitor-left; }
+    Mod+Shift+Ctrl+Down  { move-column-to-monitor-down; }
+    Mod+Shift+Ctrl+Up    { move-column-to-monitor-up; }
+    Mod+Shift+Ctrl+Right { move-column-to-monitor-right; }
+
+    // Mouse wheel (niri defaults)
+    Mod+WheelScrollDown cooldown-ms=150 { focus-workspace-down; }
+    Mod+WheelScrollUp   cooldown-ms=150 { focus-workspace-up; }
+    Mod+Ctrl+WheelScrollDown cooldown-ms=150 { move-column-to-workspace-down; }
+    Mod+Ctrl+WheelScrollUp   cooldown-ms=150 { move-column-to-workspace-up; }
+    Mod+WheelScrollLeft  { focus-column-left; }
+    Mod+WheelScrollRight { focus-column-right; }
+    Mod+Ctrl+WheelScrollLeft  { move-column-left; }
+    Mod+Ctrl+WheelScrollRight { move-column-right; }
+    Mod+Shift+WheelScrollUp   { focus-column-left; }
+    Mod+Shift+WheelScrollDown { focus-column-right; }
+    Mod+Ctrl+Shift+WheelScrollUp   { move-column-left; }
+    Mod+Ctrl+Shift+WheelScrollDown { move-column-right; }
+
+    // Let VMs/remote desktops grab all keys (Escape alone = swaylock)
+    Mod+Shift+Escape { toggle-keyboard-shortcuts-inhibit; }
 
     // Workspaces 1-9
     Mod+1 { focus-workspace 1; }
