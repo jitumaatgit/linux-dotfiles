@@ -101,8 +101,8 @@ binds {
     Mod+L { focus-column-right; }
     Mod+K { focus-workspace-up; }
     Mod+J { focus-workspace-down; }
-    Mod+[ { focus-window-up; }
-    Mod+] { focus-window-down; }
+    Mod+bracketleft { focus-window-up; }
+    Mod+bracketright { focus-window-down; }
 
     // Move (column = H/L, in-column window = K/J)
     Mod+Shift+H { move-column-left; }
