@@ -28,7 +28,7 @@
   # The command invokes a wrapper (desktop-notify.sh) instead of bare
   # notify-send: under the systemd unit PATH, bare notify-send may not resolve
   # (exit 127), and the wrapper sets `-a ntfy` so omp-ntfy-forward's app_name
-  # guard never re-publishes our own popups (loop guard).
+  # whitelist never re-publishes our own popups (loop guard).
   xdg.configFile."ntfy/client.yml".text = ''
 default-host: https://ntfy.sh
 
@@ -39,7 +39,7 @@ subscribe:
 
   # Wrapper invoked by `ntfy subscribe --from-config` for each received message.
   # Sets app_name to `ntfy` (via `notify-send -a ntfy` or busctl fallback) so the
-  # omp-ntfy-forward.service bus monitor (blacklist on "ntfy") never re-publishes
+  # omp-ntfy-forward.service bus monitor (app_name whitelist) never re-publishes
   # these popups.
   xdg.configFile."ntfy/desktop-notify.sh" = {
     text = ''
@@ -81,33 +81,32 @@ fi
 
   # Forward omp desktop notifications to ntfy topic `omp-linux`.
   #
-  # Why blacklist, not whitelist: omp detects WezTerm and uses the OSC 9
-  # notification protocol (\x1B]9;), NOT BEL (\x07). With OSC 9, omp writes an
-  # escape sequence to stdout and never calls D-Bus Notify itself — WezTerm
-  # interprets OSC 9 and bridges it to a D-Bus Notify call with WezTerm's OWN
-  # app_name (process name), not "Oh My Pi" (source-verified: omp's pSi()
-  # desktop-notify function is gated behind notifyProtocol==="\x07" and WezTerm
-  # is detected as `notifyProtocol="\x1B]9;"`). So a whitelist on "Oh My Pi"
-  # would never match real omp notifications on this terminal.
+  # omp detects WezTerm and emits notifications as OSC 9 escape sequences
+  # (\x1B]9;); it never calls D-Bus Notify itself (source-verified: omp's
+  # pSi() is gated behind notifyProtocol==="\x07"; WezTerm is detected as
+  # notifyProtocol="\x1B]9;"). WezTerm bridges OSC 9 to a D-Bus Notify call
+  # when its window is unfocused, using WezTerm's OWN app_name, not
+  # "Oh My Pi".
   #
-  # The filter blacklists app_name "ntfy" instead — our own ntfy popups use
-  # that app_name (desktop-notify.sh sets `notify-send -a ntfy`), so they are
-  # never re-published (the loop guard). Every other desktop notification is
-  # forwarded. On this personal workstation the dominant notification source
-  # is omp via WezTerm's OSC 9 bridge, so forwarding everything-but-ntfy
-  # achieves the goal.
+  # The jq filter whitelists WezTerm's candidate app_names plus "Oh My Pi"
+  # (omp's direct notify-send path on BEL-protocol terminals). Everything
+  # else — system daemons (keyboard/headphone connects, battery, network)
+  # and our own ntfy popups (app_name "ntfy" via desktop-notify.sh) — is
+  # ignored; excluding "ntfy" from the whitelist IS the loop guard.
+  # Note: another app inside WezTerm emitting OSC 9 would also forward;
+  # omp is the dominant OSC 9 emitter on this machine, so this is accepted.
   home.file.".local/bin/omp-ntfy-forward" = {
     text = ''
 #!/usr/bin/env bash
 set -euo pipefail
 
 TOPIC="omp-linux"   # dedicated topic chosen by user
-GUARD="ntfy"        # app_name of our own popups (desktop-notify.sh: notify-send -a ntfy)
 
 busctl monitor --user org.freedesktop.Notifications --json=short \
-| ${pkgs.jq}/bin/jq --unbuffered -r --arg guard "$GUARD" \
+| ${pkgs.jq}/bin/jq --unbuffered -r \
     'select(.member=="Notify") | .payload.data
-     | select(.[0]!=$guard) | "\(.[3])\t\(.[4])"' \
+     | select(.[0] | IN("wezterm","WezTerm","org.wezfurlong.wezterm","Oh My Pi"))
+     | "\(.[3])\t\(.[4])"' \
 | while IFS=$'\t' read -r summary body; do
     [ -z "$summary" ] && [ -z "$body" ] && continue
     ${pkgs.ntfy-sh}/bin/ntfy publish "$TOPIC" "''${summary}: ''${body}" || true
