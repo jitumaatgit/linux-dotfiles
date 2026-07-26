@@ -99,8 +99,8 @@ binds {
     // Focus (column nav = H/L, workspace nav = K/J, in-column = [/])
     Mod+H { focus-column-left; }
     Mod+L { focus-column-right; }
-    Mod+K { focus-workspace prev; }
-    Mod+J { focus-workspace next; }
+    Mod+K { focus-workspace-up; }
+    Mod+J { focus-workspace-down; }
     Mod+[ { focus-window-up; }
     Mod+] { focus-window-down; }
 
