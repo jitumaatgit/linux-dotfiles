@@ -96,11 +96,11 @@ binds {
     Mod+Q { close-window; }
     Mod+F { fullscreen-window; }
 
-    // Focus (column nav = H/L, in-column nav = K/J)
+    // Focus (column nav = H/L, workspace nav = K/J, in-column = [/])
     Mod+H { focus-column-left; }
     Mod+L { focus-column-right; }
-    Mod+K { focus-workspace-up; }
-    Mod+J { focus-workspace-down; }
+    Mod+K { focus-workspace prev; }
+    Mod+J { focus-workspace next; }
     Mod+[ { focus-window-up; }
     Mod+] { focus-window-down; }
 
