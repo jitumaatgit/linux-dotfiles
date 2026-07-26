@@ -94,7 +94,7 @@ binds {
 
     // Window
     Mod+Q { close-window; }
-    Mod+F { fullscreen-window; }
+    Mod+F hotkey-overlay-title="Fullscreen Window" { fullscreen-window; }
 
     // Focus (columns = H/L, workspaces = K/J, in-column windows = Up/Down)
     Mod+H { focus-column-left; }
@@ -103,50 +103,50 @@ binds {
     Mod+J { focus-workspace-down; }
     Mod+Left  { focus-column-left; }
     Mod+Right { focus-column-right; }
-    Mod+Up    { focus-window-up; }
+    Mod+Up    hotkey-overlay-title="Focus Window Up/Down" { focus-window-up; }
     Mod+Down  { focus-window-down; }
-    Mod+Home  { focus-column-first; }
+    Mod+Home  hotkey-overlay-title="Focus First/Last Column (Home/End)" { focus-column-first; }
     Mod+End   { focus-column-last; }
 
     // Move (column = H/L, in-column window = K/J)
     Mod+Shift+H { move-column-left; }
     Mod+Shift+L { move-column-right; }
-    Mod+Shift+K { move-window-up; }
+    Mod+Shift+K hotkey-overlay-title="Move Window Up/Down" { move-window-up; }
     Mod+Shift+J { move-window-down; }
-    Mod+Ctrl+Home { move-column-to-first; }
+    Mod+Ctrl+Home hotkey-overlay-title="Move Column to First/Last" { move-column-to-first; }
     Mod+Ctrl+End  { move-column-to-last; }
 
     // Move column across workspaces (Ctrl tier); reorder workspaces
     Mod+Ctrl+K { move-column-to-workspace-up; }
     Mod+Ctrl+J { move-column-to-workspace-down; }
-    Mod+Shift+Page_Up   { move-workspace-up; }
+    Mod+Shift+Page_Up   hotkey-overlay-title="Move Workspace Up/Down (reorder)" { move-workspace-up; }
     Mod+Shift+Page_Down { move-workspace-down; }
 
     // Consume/expel windows across columns (niri default binds)
     Mod+bracketleft  { consume-or-expel-window-left; }
     Mod+bracketright { consume-or-expel-window-right; }
-    Mod+Comma  { consume-window-into-column; }
-    Mod+Period { expel-window-from-column; }
+    Mod+Comma  hotkey-overlay-title="Consume Window Into Column" { consume-window-into-column; }
+    Mod+Period hotkey-overlay-title="Expel Window From Column" { expel-window-from-column; }
 
     // Column sizing, centering, tabbed display, floating
     Mod+M { maximize-column; }
-    Mod+Ctrl+F { expand-column-to-available-width; }
-    Mod+C { center-column; }
-    Mod+Ctrl+C { center-visible-columns; }
-    Mod+W { toggle-column-tabbed-display; }
-    Mod+Shift+R { switch-preset-column-width-back; }
-    Mod+Ctrl+R { reset-window-height; }
-    Mod+Shift+Minus { set-window-height "-10%"; }
+    Mod+Ctrl+F hotkey-overlay-title="Expand Column to Available Width" { expand-column-to-available-width; }
+    Mod+C hotkey-overlay-title="Center Column" { center-column; }
+    Mod+Ctrl+C hotkey-overlay-title="Center All Visible Columns" { center-visible-columns; }
+    Mod+W hotkey-overlay-title="Toggle Tabbed Column Display" { toggle-column-tabbed-display; }
+    Mod+Shift+R hotkey-overlay-title="Switch Preset Widths (reverse)" { switch-preset-column-width-back; }
+    Mod+Ctrl+R hotkey-overlay-title="Reset Window Height" { reset-window-height; }
+    Mod+Shift+Minus hotkey-overlay-title="Window Height -/+10%" { set-window-height "-10%"; }
     Mod+Shift+Equal { set-window-height "+10%"; }
     Mod+V { toggle-window-floating; }
     Mod+Shift+V { switch-focus-between-floating-and-tiling; }
 
     // Multi-monitor (arrow layer, niri defaults)
-    Mod+Shift+Left  { focus-monitor-left; }
+    Mod+Shift+Left  hotkey-overlay-title="Focus Monitor (Shift+arrows)" { focus-monitor-left; }
     Mod+Shift+Down  { focus-monitor-down; }
     Mod+Shift+Up    { focus-monitor-up; }
     Mod+Shift+Right { focus-monitor-right; }
-    Mod+Shift+Ctrl+Left  { move-column-to-monitor-left; }
+    Mod+Shift+Ctrl+Left  hotkey-overlay-title="Move Column to Monitor (Shift+Ctrl+arrows)" { move-column-to-monitor-left; }
     Mod+Shift+Ctrl+Down  { move-column-to-monitor-down; }
     Mod+Shift+Ctrl+Up    { move-column-to-monitor-up; }
     Mod+Shift+Ctrl+Right { move-column-to-monitor-right; }
@@ -166,10 +166,10 @@ binds {
     Mod+Ctrl+Shift+WheelScrollDown { move-column-right; }
 
     // Let VMs/remote desktops grab all keys (Escape alone = swaylock)
-    Mod+Shift+Escape { toggle-keyboard-shortcuts-inhibit; }
+    Mod+Shift+Escape hotkey-overlay-title="Inhibit Keybindings (VM passthrough)" { toggle-keyboard-shortcuts-inhibit; }
 
     // Workspaces 1-9
-    Mod+1 { focus-workspace 1; }
+    Mod+1 hotkey-overlay-title="Focus Workspace 1-9" { focus-workspace 1; }
     Mod+2 { focus-workspace 2; }
     Mod+3 { focus-workspace 3; }
     Mod+4 { focus-workspace 4; }
@@ -180,7 +180,7 @@ binds {
     Mod+9 { focus-workspace 9; }
 
     // Move column to workspace 1-9 (single-window column = move window)
-    Mod+Shift+1 { move-column-to-workspace 1; }
+    Mod+Shift+1 hotkey-overlay-title="Move Column to Workspace 1-9" { move-column-to-workspace 1; }
     Mod+Shift+2 { move-column-to-workspace 2; }
     Mod+Shift+3 { move-column-to-workspace 3; }
     Mod+Shift+4 { move-column-to-workspace 4; }
@@ -193,7 +193,7 @@ binds {
     // Overview + column width
     Mod+O { toggle-overview; }
     Mod+R { switch-preset-column-width; }
-    Mod+Minus { set-column-width "-10%"; }
+    Mod+Minus hotkey-overlay-title="Column Width -/+10%" { set-column-width "-10%"; }
     Mod+Equal { set-column-width "+10%"; }
 
     // Screenshot — grim+slurp, clipboard-only (per #8 issue). swappy
@@ -202,7 +202,7 @@ binds {
     // set + `~/Pictures/Screenshots/` to exist) — see #7 handoff.
     // `\"$(slurp)\"` is KDL-escaped `"`; the shell expands `$(slurp)` to the
     // selected region. grim+slurp+wl-clipboard are HM-installed (niri-extras).
-    Mod+Shift+S { spawn-sh "grim -g \"$(slurp)\" - | wl-copy"; }
+    Mod+Shift+S hotkey-overlay-title="Screenshot Region to Clipboard" { spawn-sh "grim -g \"$(slurp)\" - | wl-copy"; }
 
     // Volume (wireplumber wpctl) + brightness (brightnessctl) — FN keys.
     // The plan says "FN keys (no extra config)" — niri has NO default
