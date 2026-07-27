@@ -21,6 +21,9 @@
       overlays = [
         (final: prev: {
           which-key-wayland = which-key-wayland.packages.${system}.which-key-wayland;
+          # cheatbind is PyPI-only; build the sdist inline so the GTK
+          # cheatsheet installs declaratively alongside which-key-wayland.
+          cheatbind = final.callPackage ./home/cheatbind.nix { };
         })
       ];
     };

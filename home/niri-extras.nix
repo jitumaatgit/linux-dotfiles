@@ -27,9 +27,12 @@
     # Interactive key-hint panel — built from the which-key-wayland flake input
     # (overlay in flake.nix). Triggered by niri bind `Mod+semicolon`.
     # Config: ~/.config/which-key-wayland/config.kdl (xdg.configFile below).
-    # Note: cheatbind (the static companion sheet) is NOT in nixpkgs — install
-    # via AUR (`yay -S cheatbind`) or `pipx install cheatbind`.
+    # Static cheatsheet overlay — built inline from PyPI sdist (overlay in
+    # flake.nix calls home/cheatbind.nix). Triggered by niri bind
+    # `Mod+Shift+Slash`. Style: ~/.config/cheatbind/style.css (xdg.configFile
+    # below). Both overlay tools install declaratively, no AUR/pipx needed.
     which-key-wayland
+    cheatbind
   ];
 
   # swaylock appearance. `package = null` because the pacman-installed swaylock
@@ -66,7 +69,7 @@
   };
   # ── Cheatsheet overlays ─────────────────────────────────────────────────
   # Replaces niri's single-column hotkey-overlay with two purpose-built GTK
-  # popups (both pacman/AUR binary, not HM-built):
+  # popups, both built declaratively via HM (overlay in flake.nix):
   #
   #   cheatbind          — styled static cheatsheet. Auto-parses niri's
   #                        config.kdl (plain `hotkey-overlay-title=` labels,
