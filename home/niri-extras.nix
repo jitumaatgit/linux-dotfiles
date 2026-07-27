@@ -24,6 +24,12 @@
     pavucontrol    # audio mixer (NOT pwvucontrol — per plan spec footgun)
     swaybg         # wallpaper (solid color default; swap `-c` for `-i /path/to/img`)
     swayidle       # idle manager (lock + power-off-monitors on timeout; spawned by niri)
+    # Interactive key-hint panel — built from the which-key-wayland flake input
+    # (overlay in flake.nix). Triggered by niri bind `Mod+semicolon`.
+    # Config: ~/.config/which-key-wayland/config.kdl (xdg.configFile below).
+    # Note: cheatbind (the static companion sheet) is NOT in nixpkgs — install
+    # via AUR (`yay -S cheatbind`) or `pipx install cheatbind`.
+    which-key-wayland
   ];
 
   # swaylock appearance. `package = null` because the pacman-installed swaylock
