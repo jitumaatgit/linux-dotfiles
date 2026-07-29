@@ -246,6 +246,7 @@ local function get_inbox_notes(week_dates)
   local older = {}
   local start_time = os.time(week_dates[1].date)
   local end_time = os.time()
+  local EXCLUDED_ROOT_NOTES = { ["agents-windows"] = true, ["README"] = true }
 
   local glob_result = vim.fn.glob(vault_path() .. "/*.md", false, true)
   for _, filepath in ipairs(glob_result) do
@@ -253,7 +254,9 @@ local function get_inbox_notes(week_dates)
     if stat then
       local ctime = stat.ctime.sec
       local name = vim.fn.fnamemodify(filepath, ":t:r")
-      if ctime >= start_time and ctime <= end_time then
+      if EXCLUDED_ROOT_NOTES[name] then
+        -- skip permanent root reference files
+      elseif ctime >= start_time and ctime <= end_time then
         table.insert(this_week, name)
       elseif ctime < start_time then
         table.insert(older, { name = name, ctime = ctime })
