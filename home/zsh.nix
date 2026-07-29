@@ -72,6 +72,10 @@ in {
         opencode run --command commit
       }
 
+      omc() {
+        yes | omp commit "$@"
+      }
+
       ocp() {
         if [ $# -gt 0 ]; then
           opencode --prompt "$*"
