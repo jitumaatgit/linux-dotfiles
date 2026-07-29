@@ -10,6 +10,14 @@
       user.name = "Jitu";
       user.email = "jitumaat@protonmail.com";
 
+      # gh credential helper for HTTPS remotes (SSH remotes unaffected)
+      credential = {
+        helper = "";
+        "https://github.com" = {
+          helper = "!gh auth git-credential";
+        };
+      };
+
       gpg.format = "ssh";
 
       init.defaultBranch = "main";
