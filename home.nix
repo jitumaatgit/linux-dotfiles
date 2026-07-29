@@ -31,5 +31,6 @@
     ./home/packages.nix
     ./home/ntfy.nix
     ./home/opencode.nix
+    ./home/nix-profile-add-fix.nix
   ];
 }

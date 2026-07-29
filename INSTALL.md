@@ -538,7 +538,7 @@ Re-open the shell or `source /etc/profile.d/nix.sh` to get `nix` on PATH.
 Install HM as a standalone tool (the release branch goes in the flake URL path, not as an attribute):
 
 ```bash
-nix profile install github:nix-community/home-manager/release-25.11#home-manager
+nix profile add github:nix-community/home-manager/release-25.11#home-manager
 ```
 
 This puts `home-manager` on PATH permanently. The flake in this repo also pulls HM as an input (for `homeConfigurations.bobbytables`), but the standalone install lets you run `home-manager switch` directly without `nix run` each time.
