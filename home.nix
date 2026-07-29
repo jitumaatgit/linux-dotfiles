@@ -42,6 +42,7 @@
     ./home/packages.nix
     ./home/ntfy.nix
     ./home/opencode.nix
+    ./home/omp.nix
     ./home/nix-profile-add-fix.nix
   ];
 }
