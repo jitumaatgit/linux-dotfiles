@@ -91,7 +91,7 @@ in {
       }
 
       export EDITOR="nvim"
-      export VISUAL="wezterm start -- nvim"
+      export VISUAL="nvim"
       export OPENCODE_DISABLE_AUTOUPDATE=true
       export PLANNOTATOR_DATA_DIR="$HOME/notes/docs/plannotator"
       export MANPAGER="sh -c 'col -bx | bat -l man -p'"

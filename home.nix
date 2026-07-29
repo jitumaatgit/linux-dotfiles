@@ -5,6 +5,17 @@
   home.homeDirectory = "/home/bobbytables";
   home.stateVersion = "25.11";
 
+  # Pervasive editor env vars (non-interactive shells, systemd user units, and
+  # direct-spawn processes all inherit these via home-manager's environment.d /
+  # hm-session-vars.sh). VISUAL must be a BLOCKING editor subprocess (plain nvim),
+  # not a window launcher like `wezterm start -- nvim` — omp's `app.editor.external`
+  # spawns $VISUAL and waits on it, and so does any other tool that honors $VISUAL.
+  # Interactive zsh still overrides these in home/zsh.nix initContent (last export
+  # wins), but its override is kept consistent with nvim too.
+  home.sessionVariables = {
+    EDITOR = "nvim";
+    VISUAL = "nvim";
+  };
   # Per-program modules:
   #   home/zsh.nix       (#3)  — shell + aliases + env + starship            [done]
   #   home/git.nix       (#4)  — git config + SSH signing                    [done]
