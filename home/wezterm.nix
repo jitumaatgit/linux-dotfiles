@@ -316,6 +316,21 @@ config.keys = {
 	-- CSI 1 ~ and CSI 4 ~, which readline misreads. Send legacy sequences.
 	{ key = "Home", action = act.SendString("\x1b[H") },
 	{ key = "End", action = act.SendString("\x1b[F") },
+  -- Windows
+  { key = '%',
+    mods = 'LEADER',
+    action = wezterm.action_callback(function(win, pane)
+      local mux_win = win:mux_window()
+      local tabs = mux_win:tabs()
+      local total_panes = 0
+      for _, tab in ipairs(tabs) do
+        total_panes = total_panes + #tab:panes()
+      end
+      if total_panes > 1 then
+        pane:move_to_new_window()
+      end
+    end),
+    },
 	-- Tabs
 	{ key = "c", mods = "LEADER", action = act.SpawnTab("CurrentPaneDomain") },
 	{ key = "&", mods = "LEADER", action = act.CloseCurrentTab({ confirm = true }) },
