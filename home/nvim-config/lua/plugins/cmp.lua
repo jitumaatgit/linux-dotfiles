@@ -76,4 +76,12 @@ return {
       }
     end,
   },
+
+  -- Octo (imports extras.lang.git for issue/PR highlighting + cmp-git source).
+  -- Imported here, AFTER the nvim-cmp spec above, on purpose: the git extra's
+  -- nvim-cmp hook does `table.insert(opts.sources, ...)` and lazy.nvim runs
+  -- spec fragments oldest-first, so our `sources` must already exist when that
+  -- hook runs. Enabling octo via lazyvim.json instead makes it import before
+  -- this file and crashes startup at extras/lang/git.lua.
+  { import = "lazyvim.plugins.extras.util.octo" },
 }
