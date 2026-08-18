@@ -392,7 +392,7 @@ This is the only firmware path once Windows is wiped (Dell LVFS).
 keyd sits at the evdev layer — below niri's `xkb {}` block, below XKB, below any compositor IME — so bindings here persist across every VT/DE/compositor/IME. This is the lowest practical binding level short of a kernel patch. Home Manager can't own `/etc/`, so the config and an apply script live in the repo under `docs/keyd/` and are installed to `/etc/keyd/` post-boot:
 
 ```bash
-sudo ~/linux-dotfiles/docs/keyd/apply.sh
+sudo ~/nixarch-dotfiles/docs/keyd/apply.sh
 ```
 
 That copies `docs/keyd/default.conf` → `/etc/keyd/default.conf`, runs `keyd check` (aborts on parse error so a bad config can never brick the keyboard), and restarts `keyd`. The config in effect:
@@ -554,8 +554,8 @@ This puts `home-manager` on PATH permanently. The flake in this repo also pulls 
 After first boot, with Nix + HM installed (§10):
 
 ```bash
-git clone https://github.com/jitumaatgit/linux-dotfiles.git ~/linux-dotfiles
-cd ~/linux-dotfiles
+git clone https://github.com/jitumaatgit/nixarch-dotfiles.git ~/nixarch-dotfiles
+cd ~/nixarch-dotfiles
 home-manager switch --flake .#bobbytables
 ```
 
@@ -592,4 +592,4 @@ Git signing is SSH (not GPG): ticket #4's `home/git.nix` sets `gpg.format = ssh`
 - [x] User `bobbytables` created with zsh login shell (HM manages zsh config, not the login shell)
 - [x] Hostname `archbook`, TZ `America/Los_Angeles`, locale `en_US.UTF-8`
 - [x] Sudo configured with interactive password (no NOPASSWD)
-- [x] Closing "what to clone next" section: `linux-dotfiles` → `home-manager switch --flake .#bobbytables`
+- [x] Closing "what to clone next" section: `nixarch-dotfiles` → `home-manager switch --flake .#bobbytables`

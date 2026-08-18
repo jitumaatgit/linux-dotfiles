@@ -1,4 +1,4 @@
-# linux-dotfiles
+# nixarch-dotfiles
 
 Arch + Nix (standalone Home Manager) + Niri dotfiles for a Dell Latitude 7450 (`archbook`, user `bobbytables`).
 
@@ -16,8 +16,8 @@ The complete flow from a blank NVMe to a working desktop:
 1. **Arch install + system-level config** — follow [`INSTALL.md`](INSTALL.md) end-to-end (partition, btrfs subvolumes, systemd-boot, pacman base, services, keyd, zram, greetd→`niri-session`, Nix + Home Manager standalone). Reboot, log in as `bobbytables` at the tuigreet prompt → drops into niri.
 2. **Clone this repo**:
    ```bash
-   git clone https://github.com/jitumaatgit/linux-dotfiles.git ~/linux-dotfiles
-   cd ~/linux-dotfiles
+   git clone https://github.com/jitumaatgit/nixarch-dotfiles.git ~/nixarch-dotfiles
+   cd ~/nixarch-dotfiles
    ```
 3. **Apply the flake** — one transaction replaces the entire user-space config:
    ```bash
@@ -68,7 +68,7 @@ If any step fails, see the per-module sections below for module-specific verify 
 
 ## Disaster recovery
 
-**Rebootstrap from `linux-dotfiles` is the entire DR plan.** Git is the only backup.
+**Rebootstrap from `nixarch-dotfiles` is the entire DR plan.** Git is the only backup.
 
 - The btrfs pacman-hook snapshots (`INSTALL.md` §7) cover rollback for system-level pacman transactions — they are NOT off-machine backups.
 - All user-space config is declarative in this repo. A fresh clone + `home-manager switch --flake .#bobbytables` reproduces the entire user-space on any Arch + Nix + HM machine.
@@ -78,8 +78,8 @@ If any step fails, see the per-module sections below for module-specific verify 
 Recovery procedure (on a fresh Arch install that has followed `INSTALL.md` through §9):
 
 ```bash
-git clone https://github.com/jitumaatgit/linux-dotfiles.git ~/linux-dotfiles
-cd ~/linux-dotfiles
+git clone https://github.com/jitumaatgit/nixarch-dotfiles.git ~/nixarch-dotfiles
+cd ~/nixarch-dotfiles
 home-manager switch --flake .#bobbytables
 # then the post-switch steps in §Quickstart
 ```

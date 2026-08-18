@@ -2,7 +2,7 @@
 # Apply /etc/keyd/*.conf from this repo and restart keyd.
 # Lives in docs/keyd/ — colocated with the configs it installs.
 #
-# Usage:  sudo ~/linux-dotfiles/docs/keyd/apply.sh
+# Usage:  sudo ~/nixarch-dotfiles/docs/keyd/apply.sh
 set -euo pipefail
 
 REPO_DIR="$(dirname "$(readlink -f "$0")")"

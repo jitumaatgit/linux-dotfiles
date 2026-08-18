@@ -6,7 +6,7 @@
 
 ### Issue tracker
 
-GitHub Issues on `jitumaatgit/linux-dotfiles`. See `docs/agents/issue-tracker.md`.
+GitHub Issues on `jitumaatgit/nixarch-dotfiles`. See `docs/agents/issue-tracker.md`.
 
 ### Triage labels
 
